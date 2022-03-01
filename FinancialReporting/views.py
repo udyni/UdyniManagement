@@ -4,9 +4,9 @@ from django.http import JsonResponse, Http404
 
 from django.db.models import Count, Sum, Q, F, Value
 from django.db.models.functions import ExtractYear, ExtractMonth, Concat
-from .models import Researcher, Project, WorkPackage, BankHoliday, PersonnelCost, PresenceData, Reporting, EpasCode, TimesheetHint, TimesheetMissionHint, TimesheetHours
+from .models import Researcher, ResearcherRole, Project, WorkPackage, BankHoliday, PersonnelCost, PresenceData, Reporting, EpasCode, TimesheetHint, TimesheetMissionHint, TimesheetHours
 
-from .forms import PresenceInputForm, EpasCodeUpdateForm, ReportingAddForm
+from .forms import ResearcherRoleForm, PresenceInputForm, EpasCodeUpdateForm, ReportingAddForm
 
 from .utils import process_presences, summarize_presences, serialize_presences
 from .utils import unserialize_presences, print_context, check_presences_unique, check_bank_holiday
@@ -47,6 +47,11 @@ class ResearcherList(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['subtitle'] = "Researchers"
+        researchers = list(context['researcher_list'].values())
+        for r in researchers:
+            r['roles'] = ResearcherRole.objects.filter(researcher=r['id'])
+        print(researchers)
+        context['researcher_list'] = researchers
         return context
 
 
@@ -79,6 +84,48 @@ class ResearcherDelete(DeleteView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['subtitle'] = "Delete researcher"
+        return context
+
+
+class ResearcherRoleCreate(CreateView):
+    model = ResearcherRole
+    form_class = ResearcherRoleForm
+    success_url = reverse_lazy('researcher_view')
+
+    def get_initial(self):
+        return {'researcher': self.kwargs['researcher']}
+
+    def get_context_data(self, **kwargs):
+        r = get_object_or_404(Researcher, pk=self.kwargs['researcher'])
+        context = super().get_context_data(**kwargs)
+        context['subtitle'] = "Add new role for {0!s}".format(r)
+        context['researcher'] = r
+        return context
+
+
+class ResearcherRoleUpdate(UpdateView):
+    model = ResearcherRole
+    success_url = reverse_lazy('researcher_view')
+    form_class = ResearcherRoleForm
+
+    def get_context_data(self, **kwargs):
+        r = get_object_or_404(Researcher, pk=self.kwargs['researcher'])
+        context = super().get_context_data(**kwargs)
+        context['subtitle'] = "Modify role for {0!s}".format(r)
+        context['researcher'] = r
+        return context
+
+
+class ResearcherRoleDelete(DeleteView):
+    model = ResearcherRole
+    success_url = reverse_lazy('researcher_view')
+
+    def get_context_data(self, **kwargs):
+        r = get_object_or_404(Researcher, pk=self.kwargs['researcher'])
+        context = super().get_context_data(**kwargs)
+        context['subtitle'] = "Delete role for {0!s}".format(r)
+        context['researcher'] = r
+        print(context)
         return context
 
 

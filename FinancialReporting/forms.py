@@ -1,9 +1,21 @@
 from django import forms
 from django.db.models import Q
-from .models import Researcher, Project, WorkPackage, PersonnelCost, Reporting
+from .models import Researcher, ResearcherRole, Project, WorkPackage, PersonnelCost, Reporting
 from django.core.exceptions import ValidationError
 import pandas as pd
 import re
+
+
+class ResearcherRoleForm(forms.ModelForm):
+    # Explicitly specify start_date to set date format
+    start_date = forms.DateField(input_formats=['%d/%m/%Y', '%d-%m-%Y'], widget=forms.DateInput())
+
+    class Meta:
+        model = ResearcherRole
+        fields = ['researcher', 'role', 'start_date']
+        widgets = {
+            'researcher': forms.HiddenInput,
+        }
 
 
 class PresenceInputForm(forms.Form):

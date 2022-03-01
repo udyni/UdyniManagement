@@ -9,6 +9,10 @@ urlpatterns = [
     path('researchers/add', views.ResearcherCreate.as_view(), name='researcher_add'),
     path('researchers/<int:pk>/modify', views.ResearcherUpdate.as_view(), name='researcher_mod'),
     path('researchers/<int:pk>/delete', views.ResearcherDelete.as_view(), name='researcher_del'),
+    path('researchers/<int:researcher>/role', RedirectView.as_view(url=reverse_lazy('researcher_view'), permanent=False), name='researcher_role_view'),
+    path('researchers/<int:researcher>/role/add', views.ResearcherRoleCreate.as_view(), name='researcher_role_add'),
+    path('researchers/<int:researcher>/role/<int:pk>/modify', views.ResearcherRoleUpdate.as_view(), name='researcher_role_mod'),
+    path('researchers/<int:researcher>/role/<int:pk>/delete', views.ResearcherRoleDelete.as_view(), name='researcher_role_del'),
 
     path('projects/', views.ProjectList.as_view(), name='project_view'),
     path('projects/add', views.ProjectCreate.as_view(), name='project_add'),

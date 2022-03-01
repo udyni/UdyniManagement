@@ -21,7 +21,7 @@ class Researcher(models.Model):
         ]
 
     def __str__(self):
-        return self.name + " " + self.surname + " (" + self.get_role_display() + ")"
+        return self.name + " " + self.surname
 
 
 class ResearcherRole(models.Model):
@@ -48,6 +48,9 @@ class ResearcherRole(models.Model):
             models.UniqueConstraint(fields=['researcher', 'start_date'], name="%(app_label)s_%(class)s_unique"),
         ]
         ordering = ["researcher", "start_date"]
+
+    def __str__(self):
+        return "{0:s} from {1:s}".format(self.get_role_display(), self.start_date.isoformat())
 
 
 class Project(models.Model):
