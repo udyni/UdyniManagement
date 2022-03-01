@@ -41,7 +41,13 @@ class ResearcherRole(models.Model):
         ],
         default=RESEARCHER,
     )
-    start_date
+    start_date = models.DateField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['researcher', 'start_date'], name="%(app_label)s_%(class)s_unique"),
+        ]
+        ordering = ["researcher", "start_date"]
 
 
 class Project(models.Model):
