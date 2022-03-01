@@ -1,0 +1,42 @@
+{% extends "FinancialReporting/index.html" %}
+
+{% block content %}
+
+<div>
+  <table cellspacing="0" cellpadding="0">
+    <thead>
+      <th>Year</th>
+      <th>Periods</th>
+      <th>Missions</th>
+      <th>Hints OK</th>
+      <th>TS OK</th>
+      <th>Actions</th>
+    </thead>
+    <tbody>
+      {% for r in researchers %}
+        <tr>
+          <td colspan="6"><h4>{{ r.researcher }}</h4></td>
+        </tr>
+        {% for y, data in r.data.items %}
+          <tr>
+            <td>{{ y }}</td>
+            <td>{{ data.periods }}</td>
+            <td>{{ data.missions }}</td>
+            <td>{{ data.hints }}</td>
+            <td>{{ data.ts }}</td>
+            <td class="actions">
+              <a aria-label="Generate hints" title="Generate hints" href="{% url 'timesheets_generatehints' researcher=r.researcher.pk year=y %}">
+                <span class="ui-icon ui-icon-lightbulb" aria-hidden="true"></span></a>
+              <a aria-label="Generate timesheets" title="Generate timesheets" href="{% url 'timesheets_generate' researcher=r.researcher.pk year=y %}">
+                <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span></a>
+              <a aria-label="Print timesheets" title="Print timesheets" href="{% url 'timesheets_print_summary' researcher=r.researcher.pk year=y %}">
+                <span class="glyphicon glyphicon-print" aria-hidden="true"></span></a>
+            </td>
+          </tr>
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

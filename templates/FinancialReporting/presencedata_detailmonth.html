@@ -1,0 +1,73 @@
+{% extends "FinancialReporting/index.html" %}
+{% load tr_month %}
+
+{% block content %}
+
+<a href="{% url 'presencedata_detailyear' researcher=view.kwargs.researcher year=view.kwargs.year %}" aria-label="Back" class="btn btn-default">
+  <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span> Back
+</a>
+
+<form action="{% url 'presencedata_update' %}" method="post" name="update_month">
+{% csrf_token %}
+<input type="hidden" name="researcher" value="{{ view.kwargs.researcher }}" />
+<input type="hidden" name="year" value="{{ view.kwargs.year }}" />
+<input type="hidden" name="month" value="{{ view.kwargs.month }}" />
+<table cellspacing="0" cellpadding="0">
+  <thead>
+    <tr>
+      <td>Day</td>
+      <td>Hours</td>
+      <td>Code</td>
+      <td>TS hours</td>
+      <td>TS Code</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for obj in presences.pres_stat %}
+      <tr>
+        <td>{{ obj.day }}</td>
+        <td>{{ obj.hours | floatformat:-1 }}</td>
+        <td>{{ obj.code_name }}</td>
+        <td><input type="text" name="ts_day_{{ obj.day | date:'d' }}" value="{{ obj.ts_hours | floatformat:-1 }}" /></td>
+        <td>
+          <select name="ts_code_{{ obj.day | date:'d' }}">
+            {% for choice in choices %}
+              {% if choice.0 == obj.ts_code %}
+                <option value="{{ choice.0 }}" selected="selected">{{ choice.1 }}</option>
+              {% else %}
+                <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<button type="submit" class="btn btn-default">
+  <span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span> Save
+</button>
+</form>
+
+<table cellspacing="0" cellpadding="0">
+  <thead>
+    <tr>
+      <td>Code</td>
+      <td>TS code</td>
+      <td>Description</td>
+      <td>Times used</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for obj in presences.code_stat %}
+      <tr>
+        <td>{{ obj.code_name }}</td>
+        <td>{{ obj.code_ts }}</td>
+        <td>{{ obj.code_desc }}</td>
+        <td>{{ obj.tot_code }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

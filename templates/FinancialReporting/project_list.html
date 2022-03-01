@@ -1,0 +1,60 @@
+{% extends "FinancialReporting/index.html" %}
+{% block content %}
+
+<a href="{% url 'project_add' %}" class="btn btn-default" aria-label="Add project">
+  <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add project
+</a>
+
+<table cellspacing="0" cellpadding="0">
+  <thead>
+    <tr>
+      <td>Name</td>
+      <td>Agency</td>
+      <td>Reference</td>
+      <td>Actions</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for project in object_list %}
+      <tr{% if project.workpackages %} class="has-wp"{% endif %}>
+        <td>{{ project.name }}</td>
+        <td>{{ project.agency }}</td>
+        <td>{{ project.reference }}</td>
+        <td class="col-actions">
+          <a href="{% url 'project_mod' pk=project.id %}" aria-label="Modify"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span></a>
+          <a href="{% url 'project_del' pk=project.id %}" aria-label="Delete"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></a>
+          <a href="{% url 'wp_add_prj' project=project.id %}" aria-label="Add workpackage"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
+        </td>
+      </tr>
+      {% if project.workpackages %}
+        <tr>
+          <td colspan="4">
+            <table cellspacing="0" cellpadding="0" class="workpackages">
+              <thead>
+                <tr>
+                  <td>WP</td>
+                  <td>Description</td>
+                  <td></td>
+                </tr>
+              </thead>
+              <tbody>
+                {% for wp in project.workpackages %}
+                  <tr>
+                    <td>{{ wp.name }}</td>
+                    <td>{{ wp.desc }}</td>
+                    <td class="col-actions">
+                      <a href="{% url 'wp_mod' pk=wp.id %}" aria-label="Modify"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span></a>
+                      <a href="{% url 'wp_del' pk=wp.id %}" aria-label="Delete"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      {% endif %}
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

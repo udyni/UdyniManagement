@@ -1,0 +1,13 @@
+{% extends "FinancialReporting/index.html" %}
+
+{% block content %}
+
+<p>Are you sure you want to delete the workpackage {{ workpackage.name }} in project {{ workpackage.project }}?</p>
+
+<form action="" method="POST">
+  {% csrf_token %}
+  <input type="submit" value="Yes, delete." class="btn btn-default" />
+  <a href="{% url 'project_view' %}" aria-label="Cancel" class="btn btn-default">Cancel</a>
+</form>
+
+{% endblock %}

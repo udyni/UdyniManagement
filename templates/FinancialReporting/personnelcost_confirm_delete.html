@@ -1,0 +1,13 @@
+{% extends "FinancialReporting/index.html" %}
+
+{% block content %}
+
+<p>Are you sure you want to delete the presonnel cost for {{ personnelcost.researcher }} for year {{ personnelcost.year }}?</p>
+
+<form action="" method="POST">
+  {% csrf_token %}
+  <input type="submit" value="Yes, delete." class="btn btn-default" />
+  <a href="{% url 'cost_view' %}" class="btn btn-default">Cancel</a>
+</form>
+
+{% endblock %}

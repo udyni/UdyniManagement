@@ -1,0 +1,192 @@
+{% extends "FinancialReporting/index.html" %}
+
+{% load widget_tweaks %}
+
+{% block content %}
+
+<form action="" method="post">
+  {% csrf_token %}
+
+  {% for hidden_field in form.hidden_fields %}
+    {{ hidden_field }}
+  {% endfor %}
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+      {% for error in form.non_field_errors %}raise
+        {{ error }}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% regroup form.visible_fields|dictsort:'number' by number as grouped_filds %}
+
+  {% for group in grouped_filds %}
+    {% if group.grouper == 0 %}
+      {% for field in group.list %}
+        <div class="form-group{% if field.errors %} has-error{% endif %}">
+          {{ field.label_tag }}
+
+          {% if form.is_bound %}
+            {% render_field field class="form-control" %}
+            {% if field.errors %}
+              {% for error in field.errors %}
+                <div class="text-danger">
+                  {{ error }}
+                </div>
+              {% endfor %}
+            {% endif %}
+          {% else %}
+            {% render_field field class="form-control" %}
+          {% endif %}
+
+          {% if field.help_text %}
+            <small class="help-block">{{ field.help_text }}</small>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+  <div id="wp_reporting">
+    {% else %}
+      <div id="wp_{{ group.grouper }}" class="form-group panel panel-default panel-padding">
+        {% for field in group.list %}
+          <div{% if field.errors %} class="has-error"{% endif %}>
+            {{ field.label_tag }}
+            {% if form.is_bound %}
+              {% render_field field class="form-control" %}
+              {% if field.errors %}
+                {% for error in field.errors %}
+                  <div class="text-danger">
+                    {{ error }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% else %}
+              {% render_field field class="form-control" %}
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endfor %}
+  </div>
+  <div class="form-group">
+    Total hours: <b><span id="total_hours"></span></b>
+  </div>
+  <div class="form-group">
+    <button type="button" id="add_wp" class="btn btn-default">Add WP</button>
+  </div>
+  <div class="form-group">
+    <input type="submit" value="Save" class="btn btn-default" />
+    <a href="{% url 'reporting_view' %}" aria-label="Cancel" class="btn btn-default">Cancel</a>
+  </div>
+</form>
+
+<script>
+
+function update_total_hours() {
+  let hours = 0;
+  $("input[name^=hours_input_]").each( function() {
+    if($(this).val() != "") {
+      hours += parseFloat($(this).val());
+    }
+  });
+  $("#total_hours").html(hours.toString());
+}
+
+let last_wp = 1;
+$(document).ready(function() {
+  $("#add_wp").click(function(){
+    obj = $("#wp_"+last_wp.toString()).clone();
+    new_wp = last_wp + 1
+    obj.prop('id', "wp_"+new_wp.toString());
+    obj.find("select").each(function() {
+      $(this).prop('name', "wp_"+new_wp.toString());
+      $(this).prop('id', "id_wp_"+new_wp.toString());
+    });
+    obj.find("input").each(function() {
+      $(this).prop('name', "hours_input_"+new_wp.toString());
+      $(this).prop('id', "id_hours_input_"+new_wp.toString());
+      $(this).val('0');
+      $(this).change(function() { update_total_hours(); });
+    });
+    obj.find("label").each(function() {
+      m = $(this).prop('for').match(/^(.*)_(\d+)$/);
+      if(m != null) {
+        $(this).prop('for', m[1]+"_"+new_wp.toString());
+      }
+    });
+    last_wp = new_wp;
+    obj.appendTo("#wp_reporting");
+  });
+  // Update total hours at page load
+  update_total_hours();
+
+  // Trigger total hours update on any change
+  $("input[name^=hours_input_]").change(function() {
+    update_total_hours();
+  });
+});
+
+$( function() {
+  $( "#id_rp_start" ).datepicker( {
+    dateFormat: "dd/mm/yy",
+    changeYear: true,
+    changeMonth: true,
+  } );
+  $( "#id_rp_end" ).datepicker( {
+    dateFormat: "dd/mm/yy",
+    changeYear: true,
+    changeMonth: true,
+  } );
+} );
+
+$("#id_project").change(function () {
+  var project = $(this).val();
+  $.ajax({
+    url: '{% url "reporting_update_wps" %}',
+    data: {
+      'project': project,
+    },
+    headers: {
+      'X-CSRFToken': Cookies.get('csrftoken'),
+    },
+    method: "POST",
+    success: function (response) {
+      var new_wps = response['wps'];
+      $("#wp_reporting select").each( function() {
+        let obj = $(this)
+        obj.empty();
+        obj.append($('<option>', { value : ""}).text("---------"));
+        $.each(new_wps, function(key, value) {
+          obj.append($('<option>', { value : value.pk }).text(value.name));
+        });
+      });
+    }
+  });
+});
+
+$("#id_researcher").change(function () {
+  var researcher = $(this).val();
+  $.ajax({
+    url: '{% url "reporting_update_costs" %}',
+    data: {
+      'researcher': researcher,
+    },
+    headers: {
+      'X-CSRFToken': Cookies.get('csrftoken'),
+    },
+    method: "POST",
+    success: function (response) {
+      var new_costs = response['costs'];
+      $("#id_cost").empty();
+      $("#id_cost").append($('<option>', { value : ""}).text("---------"));
+      $.each(new_costs, function(key, value) {
+        $("#id_cost").append($('<option>', { value : value.pk }).text(value.name));
+      });
+    }
+  });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,368 @@
+/* kate: replace-tabs on; indent-width 2; indent-mode cstyle; */
+
+body {
+  font-family: "Roboto", "lato", sans-serif;
+  font-size: 10pt;
+}
+
+/* navbar fixes */
+#content {
+  margin-top: 75px;
+  padding: 30px;
+}
+
+.navbar-header {
+  height: 75px;
+}
+
+header.navbar {
+  height: 75px;
+}
+
+h3.subtitle {
+  margin-top: 0px;
+  margin-bottom: 10px;
+}
+
+header.navbar h1 {
+  font-size: 30px;
+  font-weight: bold;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  margin-left: 5px;
+}
+
+header.navbar h1 img {
+  margin-right: 10px;
+}
+
+@media (max-width: 768px) {
+  .navbar-fixed-side {
+    z-index: 2000;
+    background: none;
+    box-shadow: none;
+    border: none;
+  }
+  .navbar-fixed-top {
+    z-index: 1000;
+  }
+  #content {
+    margin-top: 0px;
+    padding: 10px;
+  }
+}
+
+/* Smaller icons on buttons */
+.btn {
+  font-size: 12px;
+  padding: 3px 7px;
+}
+
+/* Loading overlay */
+#loading_overlay {
+  display: none;
+}
+
+.overlay {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    background: #222;
+    z-index: 3000;
+    opacity: 0.5;
+}
+
+.overlay__inner {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+.overlay__content {
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.spinner {
+    width: 75px;
+    height: 75px;
+    display: inline-block;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.05);
+    border-top-color: #fff;
+    animation: spin 1s infinite linear;
+    border-radius: 100%;
+    border-style: solid;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* Application tables */
+
+table {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+table tr > td, table tr > th {
+  border-bottom: 1px solid black;
+  padding: 5px;
+}
+
+td.no-border, th.no-border {
+  border: 0px;
+}
+
+table tr > td.col-actions {
+  width: 70px;
+}
+
+table tr.has-wp > td {
+  border-bottom: 0px;
+}
+
+table > thead {
+  font-weight: bold;
+  font-size: 13pt;
+}
+
+table.workpackages {
+  width: calc(100% - 20px);
+  margin-left: 20px;
+}
+
+table.workpackages tr > td {
+  border-bottom: 0px;
+}
+
+table.workpackages > thead {
+  font-weight: bold;
+  font-size: 12px;
+}
+
+
+/* Timesheet table */
+
+div.ts_title {
+  background-color: darkgray !important;
+  color: white !important;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 16pt;
+}
+
+div.ts_title > b {
+  color: white !important;
+}
+
+table.ts_header tr > td {
+  border-bottom: 1px solid black;
+  padding: 5px;
+}
+
+table.ts_header tr.beneficiary > td.header {
+  border-bottom: 0px;
+  font-size: 12pt;
+}
+
+table.ts_header tr.beneficiary > td.value {
+  border-bottom: 0px;
+  font-size: 20pt;
+  font-weight: bold;
+}
+
+table.ts_header tr.name > td.header {
+  border-bottom: 0px;
+  font-size: 12pt;
+}
+
+table.ts_header tr.name > td.value {
+  border-bottom: 0px;
+  font-size: 18pt;
+  font-weight: bold;
+}
+
+table.ts_header tr.employment > td.header {
+  font-size: 12pt;
+}
+
+table.ts_header tr.employment > td.value {
+  font-size: 18pt;
+  font-weight: bold;
+}
+
+@media print {
+  table.timesheet {
+    font-face: "Roboto Condensed";
+  }
+}
+
+table.timesheet td.holiday {
+  background-color: #FEEFDA !important;
+}
+
+table.timesheet tr.days > td {
+  /* background-color: #B7D4FF; */
+  border-bottom: 2px solid black;
+}
+
+table.timesheet tr.days > td.day {
+  width: 2.5em;
+  text-align: center;
+}
+
+table.timesheet tr.project > td.hours {
+  text-align: center;
+}
+
+table.timesheet tr.project.has_wps > td {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+table.timesheet tr.wp > td {
+  border-bottom: 0px;
+  font-size: 9pt;
+}
+
+@media print {
+  table.timesheet td {
+    font-size: 9.5pt;
+  }
+  table.timesheet tr.wp > td {
+    font-size: 8pt;
+  }
+  table.timesheet tr.days > td.day {
+    width: 2em;
+  }
+}
+
+table.timesheet tr.wp > td.hours {
+  text-align: center;
+  color: #7d7d7d;
+}
+
+table.timesheet tr.wp.last_wp > td {
+  border-bottom: 1px solid black;
+}
+
+table.timesheet tr.wp > td.header {
+  padding-left: 15px;
+}
+
+table.timesheet tr.absences > td {
+  border-bottom: 2px solid black;
+}
+
+table.timesheet tr.absences > td.value {
+  text-align: center;
+}
+
+table.timesheet tr.total > td {
+  border-bottom: 0px;
+}
+
+table.timesheet tr.total > td.hours {
+  text-align: center;
+}
+
+table.timesheet tr.total > td.total {
+  font-weight: bold;
+}
+
+table.timesheet td.total {
+  border-left: 1px solid black;
+}
+
+div.signature {
+  padding: 10px;
+}
+table.signature tr > td {
+  border-bottom: 1px solid black;
+  padding: 30px 5px 0px 5px;
+}
+table.signature tr > td.header {
+  width: 15em;
+  border-bottom: 0px;
+  text-align: right;
+}
+
+div.legend {
+  padding-top: 20px;
+}
+
+div.actions {
+  padding-bottom: 10px;
+}
+
+.panel-padding {
+  padding: 10px;
+}
+
+.ts-control {
+  width: 70px;
+}
+
+.hours-hint {
+  font-size: 9pt;
+  color: darkgray;
+}
+
+.sum-mismatch {
+  font-size: 9pt;
+  color: darkred;
+  font-weight: bold;
+}
+
+/* Bootstrap columns for printing */
+@media print {
+   .col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12 {
+        float: left;
+   }
+   .col-sm-12 {
+        width: 100%;
+   }
+   .col-sm-11 {
+        width: 91.66666667%;
+   }
+   .col-sm-10 {
+        width: 83.33333333%;
+   }
+   .col-sm-9 {
+        width: 75%;
+   }
+   .col-sm-8 {
+        width: 66.66666667%;
+   }
+   .col-sm-7 {
+        width: 58.33333333%;
+   }
+   .col-sm-6 {
+        width: 50%;
+   }
+   .col-sm-5 {
+        width: 41.66666667%;
+   }
+   .col-sm-4 {
+        width: 33.33333333%;
+   }
+   .col-sm-3 {
+        width: 25%;
+   }
+   .col-sm-2 {
+        width: 16.66666667%;
+   }
+   .col-sm-1 {
+        width: 8.33333333%;
+   }
+}

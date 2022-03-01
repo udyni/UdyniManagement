@@ -1,0 +1,142 @@
+{% load static %}
+{% load tr_month %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8">
+  <title>Timesheet for {{ researcher }} - {{ month | month_num2en }}, {{ year }}</title>
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bootstrap-theme.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/navbar-fixed-side.css' %}">
+  <link rel="stylesheet" href="{% static 'css/jquery-ui.min.css' %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}" media="all" />
+  <link rel="shortcut icon" type="image/png" href="{% static 'accounting.png' %}"/>
+  <script type="text/javascript" src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/jquery-ui.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/bootstrap.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/js.cookie.min.js' %}"></script>
+</head>
+<body>
+
+<div class="container-fluid">
+
+  <div class="ts_title">Time Recording for HORIZON 2020 Actions - <b>{{ month | month_num2en }}, {{ year }}</b></div>
+
+  <table class="ts_header" cellspacing="0" cellpadding="0">
+    <tr class="beneficiary">
+      <td class="header">Beneficiary's / Third party's name</td>
+      <td class="value" colspan="3">{{ beneficiary }}</td>
+    </tr>
+    <tr class="name">
+      <td class="header">Person working on the action</td>
+      <td class="value">{{ researcher }}</td>
+      <td class="header">Type of personnel (see GA art. 6.2.A)</td>
+      <td class="value">{{ employment }}</td>
+    </tr>
+  </table>
+  <table class="timesheet" cellspacing="0" cellpadding="0">
+    <tr class="days">
+      <td class="header">Day</td>
+      {% for d in ts.days %}
+        <td class="day{% if d.holiday %} holiday{% endif %}">{{ d.n }}</td>
+      {% endfor %}
+      <td class="day total">&Sigma;</td>
+    </tr>
+    {% for p in ts.projects %}
+      <tr class="project{% if p.has_wps %} has_wps{% endif %}">
+        <td class="header">{{ p.name }}: {{ p.ref }}</td>
+        {% for d in p.days %}
+          <td class="hours{% if d.holiday %} holiday{% endif %}">{{ d.h }}</td>
+        {% endfor %}
+        <td class="total">{{ p.total }}</td>
+      </tr>
+      {% if p.has_wps %}
+        {% for wp in p.wps %}
+          <tr class="wp{% if wp.last %} last_wp{% endif %}">
+            <td class="header">{{ wp.name }}: {{ wp.desc }}</td>
+            {% for d in wp.days %}
+              <td class="hours{% if d.holiday %} holiday{% endif %}">{{ d.h }}</td>
+            {% endfor %}
+            <td class="total">{{ wp.total }}</td>
+          </tr>
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+    <tr class="absences">
+      <td class="header">Absences</td>
+      {% for a in ts.absence_code %}
+        <td class="value{% if a.holiday %} holiday{% endif %}">{{ a.a }}</td>
+      {% endfor %}
+      <td class="total"></td>
+    </tr>
+    <tr class="total">
+      <td class="header">Total</td>
+      {% for d in ts.day_total %}
+        <td class="hours{% if d.holiday %} holiday{% endif %}">{{ d.h }}</td>
+      {% endfor %}
+      <td class="total">{{ ts.grand_total }}</td>
+    </tr>
+  </table>
+
+  <div class="row signatures">
+    <div class="col-sm-2 legend">
+      <table class="legend">
+        <tr>
+          <td>Sick leave</td>
+          <td>SL</td>
+        </tr>
+        <tr>
+          <td>Public holidays</td>
+          <td>PH</td>
+        </tr>
+        <tr>
+          <td>Annual holidays</td>
+          <td>AH</td>
+        </tr>
+        <tr>
+          <td>Missions</td>
+          <td>MI</td>
+        </tr>
+        <tr>
+          <td>Other absences</td>
+          <td>OA</td>
+        </tr>
+      </table>
+    </div>
+    <div class="col-sm-5 signature">
+      <table class="signature" cellspacing="0" cellpadding="0">
+        <tr class="name">
+          <td class="header">Signed (Name of the person):</td>
+          <td><b>{{ researcher }}</td>
+        </tr>
+        <tr class="date">
+          <td class="header">Date:</td>
+          <td><b>{{ ts.sign_day }}</b></td>
+        </tr>
+        <tr class="signature">
+          <td class="header">Signature:</td>
+          <td></td>
+        </tr>
+      </table>
+    </div>
+    <div class="col-sm-5 signature">
+      <table class="signature" cellspacing="0" cellpadding="0">
+        <tr class="name">
+          <td class="header">Signed (Name of supervisor):</td>
+          <td></td>
+        </tr>
+        <tr class="date">
+          <td class="header">Date:</td>
+          <td></td>
+        </tr>
+        <tr class="signature">
+          <td class="header">Signature:</td>
+          <td></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>

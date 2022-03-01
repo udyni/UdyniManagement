@@ -1,0 +1,19 @@
+{% extends "FinancialReporting/index.html" %}
+{% load tr_month %}
+
+{% block content %}
+
+<p>
+  <a href="{% url 'timesheets_view' %}" aria-label="Back" class="btn btn-default"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span> Back</a>
+</p>
+
+{% for m in months %}
+  <p>
+    <a class="btn btn-default no-overlay" target="_blank" aria-label="Print timesheet for {{ m | month_num2en }}" title="Print timesheet for {{ m | month_num2en }}" href="{% url 'timesheets_print' researcher=rid year=year month=m %}">
+      <span class="glyphicon glyphicon-print" aria-hidden="true"></span>
+      Print timesheet for {{ m | month_num2en }}
+    </a>
+  </p>
+{% endfor %}
+
+{% endblock %}
