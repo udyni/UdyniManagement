@@ -83,8 +83,9 @@ DATABASES = {
         'NAME': 'management',
         'USER' : 'management',
         'PASSWORD' : 'ighech5ucha7ka',
-        'HOST' : 'localhost',
+        'HOST' : 'storage.udyni.lab',
         'PORT' : '5432',
+        'OPTIONS': {'sslmode': 'require'},
     }
 }
 
