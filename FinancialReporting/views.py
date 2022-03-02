@@ -18,6 +18,8 @@ from django.views import View
 from django.views.generic.list import ListView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 
+from django.contrib.auth.mixins import PermissionRequiredMixin
+
 import re
 import pandas as pd
 from lxml import etree
@@ -41,8 +43,9 @@ def index(request):
 # =============================================
 # RESEARCHERS VIEWS
 
-class ResearcherList(ListView):
+class ResearcherList(PermissionRequiredMixin, ListView):
     model = Researcher
+    permission_required = 'reporting.read'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -55,10 +58,11 @@ class ResearcherList(ListView):
         return context
 
 
-class ResearcherCreate(CreateView):
+class ResearcherCreate(PermissionRequiredMixin, CreateView):
     model = Researcher
     fields = ['name', 'surname', 'role']
     success_url = reverse_lazy('researcher_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -66,10 +70,11 @@ class ResearcherCreate(CreateView):
         return context
 
 
-class ResearcherUpdate(UpdateView):
+class ResearcherUpdate(PermissionRequiredMixin, UpdateView):
     model = Researcher
     fields = ['name', 'surname', 'role']
     success_url = reverse_lazy('researcher_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -77,9 +82,10 @@ class ResearcherUpdate(UpdateView):
         return context
 
 
-class ResearcherDelete(DeleteView):
+class ResearcherDelete(PermissionRequiredMixin, DeleteView):
     model = Researcher
     success_url = reverse_lazy('researcher_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -87,10 +93,11 @@ class ResearcherDelete(DeleteView):
         return context
 
 
-class ResearcherRoleCreate(CreateView):
+class ResearcherRoleCreate(PermissionRequiredMixin, CreateView):
     model = ResearcherRole
     form_class = ResearcherRoleForm
     success_url = reverse_lazy('researcher_view')
+    permission_required = 'reporting.modify'
 
     def get_initial(self):
         return {'researcher': self.kwargs['researcher']}
@@ -103,10 +110,11 @@ class ResearcherRoleCreate(CreateView):
         return context
 
 
-class ResearcherRoleUpdate(UpdateView):
+class ResearcherRoleUpdate(PermissionRequiredMixin, UpdateView):
     model = ResearcherRole
     success_url = reverse_lazy('researcher_view')
     form_class = ResearcherRoleForm
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         r = get_object_or_404(Researcher, pk=self.kwargs['researcher'])
@@ -116,9 +124,10 @@ class ResearcherRoleUpdate(UpdateView):
         return context
 
 
-class ResearcherRoleDelete(DeleteView):
+class ResearcherRoleDelete(PermissionRequiredMixin, DeleteView):
     model = ResearcherRole
     success_url = reverse_lazy('researcher_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         r = get_object_or_404(Researcher, pk=self.kwargs['researcher'])
@@ -132,8 +141,9 @@ class ResearcherRoleDelete(DeleteView):
 # =============================================
 # PROJECTS and WORKPACKAGES
 #
-class ProjectList(ListView):
+class ProjectList(PermissionRequiredMixin, ListView):
     model = Project
+    permission_required = 'reporting.read'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -141,10 +151,11 @@ class ProjectList(ListView):
         return context
 
 
-class ProjectCreate(CreateView):
+class ProjectCreate(PermissionRequiredMixin, CreateView):
     model = Project
     fields = ['name', 'agency', 'reference']
     success_url = reverse_lazy('project_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -152,10 +163,11 @@ class ProjectCreate(CreateView):
         return context
 
 
-class ProjectUpdate(UpdateView):
+class ProjectUpdate(PermissionRequiredMixin, UpdateView):
     model = Project
     fields = ['name', 'agency', 'reference']
     success_url = reverse_lazy('project_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -163,9 +175,10 @@ class ProjectUpdate(UpdateView):
         return context
 
 
-class ProjectDelete(DeleteView):
+class ProjectDelete(PermissionRequiredMixin, DeleteView):
     model = Project
     success_url = reverse_lazy('project_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -176,10 +189,11 @@ class ProjectDelete(DeleteView):
 # =============================================
 # Work packages
 #
-class WorkPackageCreate(CreateView):
+class WorkPackageCreate(PermissionRequiredMixin, CreateView):
     model = WorkPackage
     fields = ['name', 'desc']
     success_url = reverse_lazy('project_view')
+    permission_required = 'reporting.read'
 
     def form_valid(self, form):
         project = get_object_or_404(Project, pk=self.kwargs['project'])
@@ -193,10 +207,11 @@ class WorkPackageCreate(CreateView):
         return context
 
 
-class WorkPackageUpdate(UpdateView):
+class WorkPackageUpdate(PermissionRequiredMixin, UpdateView):
     model = WorkPackage
     fields = ['name', 'desc']
     success_url = reverse_lazy('project_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -207,6 +222,7 @@ class WorkPackageUpdate(UpdateView):
 class WorkPackageDelete(DeleteView):
     model = WorkPackage
     success_url = reverse_lazy('project_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -217,8 +233,9 @@ class WorkPackageDelete(DeleteView):
 # =============================================
 # PERSONNEL COSTS
 #
-class PersonnelCostList(ListView):
+class PersonnelCostList(PermissionRequiredMixin, ListView):
     model = PersonnelCost
+    permission_required = 'reporting.read'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -226,10 +243,11 @@ class PersonnelCostList(ListView):
         return context
 
 
-class PersonnelCostCreate(CreateView):
+class PersonnelCostCreate(PermissionRequiredMixin, CreateView):
     model = PersonnelCost
     fields = ['researcher', 'year', 'working_hours', 'cost']
     success_url = reverse_lazy('cost_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -237,10 +255,11 @@ class PersonnelCostCreate(CreateView):
         return context
 
 
-class PersonnelCostUpdate(UpdateView):
+class PersonnelCostUpdate(PermissionRequiredMixin, UpdateView):
     model = PersonnelCost
     fields = ['year', 'working_hours', 'cost']
     success_url = reverse_lazy('cost_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -248,9 +267,10 @@ class PersonnelCostUpdate(UpdateView):
         return context
 
 
-class PersonnelCostDelete(DeleteView):
+class PersonnelCostDelete(PermissionRequiredMixin, DeleteView):
     model = PersonnelCost
     success_url = reverse_lazy('cost_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -263,8 +283,9 @@ class PersonnelCostDelete(DeleteView):
 # PRESENCES
 #
 
-class PresenceDataList(ListView):
+class PresenceDataList(PermissionRequiredMixin, ListView):
     model = PresenceData
+    permission_required = 'reporting.read'
 
     def get_queryset(self):
         if 'researcher' in self.kwargs:
@@ -299,9 +320,10 @@ class PresenceDataList(ListView):
         return context
 
 
-class PresenceDataDetail(ListView):
+class PresenceDataDetail(PermissionRequiredMixin, ListView):
     model = PresenceData
     context_object_name = 'presences'
+    permission_required = 'reporting.read'
 
     def get_template_names(self):
         if 'month' in self.kwargs:
@@ -386,9 +408,10 @@ class PresenceDataDetail(ListView):
         return context
 
 
-class PresenceDataImport(View):
+class PresenceDataImport(PermissionRequiredMixin, View):
 
     http_method_names = ['get', 'post']
+    permission_required = 'reporting.modify'
 
     def get(self, request, *args, **kwargs):
         # Clear session
@@ -425,9 +448,10 @@ class PresenceDataImport(View):
         return render(request, 'FinancialReporting/presencedata_form.html', context)
 
 
-class PresenceDataStore(View):
+class PresenceDataStore(PermissionRequiredMixin, View):
 
     http_method_names = ['post', ]
+    permission_required = 'reporting.modify'
 
     def post(self, request, *args, **kwargs):
         if 'presences' in request.session:
@@ -486,9 +510,10 @@ class PresenceDataStore(View):
         return redirect('presencedata_view')
 
 
-class PresenceDataUpdate(View):
+class PresenceDataUpdate(PermissionRequiredMixin, View):
 
     http_method_names = ['post', ]
+    permission_required = 'reporting.modify'
 
     def post(self, request, *args, **kwargs):
         # Extract data from POST
@@ -534,9 +559,10 @@ class PresenceDataUpdate(View):
         return redirect('presencedata_detailmonth', researcher=researcher.pk, year=year, month=month)
 
 
-class PresenceDataExportTS(View):
+class PresenceDataExportTS(PermissionRequiredMixin, View):
 
     http_method_names = ['get', 'post']
+    permission_required = 'reporting.modify'
 
     def get(self, request, *args, **kwargs):
         # First step -> Check which missions in the year should be reported
@@ -729,9 +755,10 @@ class PresenceDataExportTS(View):
 # EPAS CODES
 #
 
-class EpasCodeList(ListView):
+class EpasCodeList(PermissionRequiredMixin, ListView):
     model = EpasCode
     paginate_by = 20
+    permission_required = 'reporting.read'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -741,9 +768,10 @@ class EpasCodeList(ListView):
         return context
 
 
-class EpasCodeImport(View):
+class EpasCodeImport(PermissionRequiredMixin, View):
 
     http_method_names = ['get', 'post']
+    permission_required = 'reporting.modify'
 
     def get(self, request, *args, **kwargs):
         context = {
@@ -797,9 +825,10 @@ class EpasCodeImport(View):
             return render(request, 'FinancialReporting/epascode_form.html', context)
 
 
-class EpasCodeUpdate(View):
+class EpasCodeUpdate(PermissionRequiredMixin, View):
 
     http_method_names = ['post', ]
+    permission_required = 'reporting.modify'
 
     def post(self, request, *args, **kwargs):
         for k, v in request.POST.items():
@@ -820,8 +849,9 @@ class EpasCodeUpdate(View):
 # BANK HOLYDAYS
 #
 
-class BankHolidayList(ListView):
+class BankHolidayList(PermissionRequiredMixin, ListView):
     model = BankHoliday
+    permission_required = 'reporting.read'
 
     def ordinaltg(self, n):
         return {1: 'st', 2: 'nd', 3: 'rd'}.get(4 if 10 <= n % 100 < 20 else n % 10, "th")
@@ -837,10 +867,11 @@ class BankHolidayList(ListView):
         return context
 
 
-class BankHolidayCreate(CreateView):
+class BankHolidayCreate(PermissionRequiredMixin, CreateView):
     model = BankHoliday
     fields = ['name', 'year', 'month', 'day']
     success_url = reverse_lazy('bankholiday_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -848,10 +879,11 @@ class BankHolidayCreate(CreateView):
         return context
 
 
-class BankHolidayUpdate(UpdateView):
+class BankHolidayUpdate(PermissionRequiredMixin, UpdateView):
     model = BankHoliday
     fields = ['name', 'year', 'month', 'day']
     success_url = reverse_lazy('bankholiday_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -859,9 +891,10 @@ class BankHolidayUpdate(UpdateView):
         return context
 
 
-class BankHolidayDelete(DeleteView):
+class BankHolidayDelete(PermissionRequiredMixin, DeleteView):
     model = BankHoliday
     success_url = reverse_lazy('bankholiday_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -873,8 +906,9 @@ class BankHolidayDelete(DeleteView):
 # REPORTING
 #
 
-class ReportingList(ListView):
+class ReportingList(PermissionRequiredMixin, ListView):
     model = Reporting
+    permission_required = 'reporting.read'
 
     def get_queryset(self):
         qs = (
@@ -898,9 +932,10 @@ class ReportingList(ListView):
         return context
 
 
-class ReportingCreate(View):
+class ReportingCreate(PermissionRequiredMixin, View):
 
     http_method_names = ['get', 'post']
+    permission_required = 'reporting.modify'
 
     def get(self, request, *args, **kwargs):
         context = {
@@ -960,11 +995,12 @@ class ReportingCreate(View):
             return render(request, 'FinancialReporting/reporting_form.html', context)
 
 
-class ReportingUpdate(UpdateView):
+class ReportingUpdate(PermissionRequiredMixin, UpdateView):
     model = Reporting
     fields = ['hours', 'cost', 'has_missions']
     success_url = reverse_lazy('reporting_view')
     template_name_suffix = '_update_form'
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -972,9 +1008,10 @@ class ReportingUpdate(UpdateView):
         return context
 
 
-class ReportingDelete(DeleteView):
+class ReportingDelete(PermissionRequiredMixin, DeleteView):
     model = Reporting
     success_url = reverse_lazy('reporting_view')
+    permission_required = 'reporting.modify'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -982,9 +1019,10 @@ class ReportingDelete(DeleteView):
         return context
 
 
-class ReportingUpdateWPs(View):
+class ReportingUpdateWPs(PermissionRequiredMixin, View):
 
     http_method_names = ['post', ]
+    permission_required = 'reporting.modify'
 
     def post(self, request, *args, **kwargs):
 
@@ -999,9 +1037,10 @@ class ReportingUpdateWPs(View):
             return JsonResponse({'wps': list()})
 
 
-class ReportingUpdateCosts(View):
+class ReportingUpdateCosts(PermissionRequiredMixin, View):
 
     http_method_names = ['post', ]
+    permission_required = 'reporting.modify'
 
     def post(self, request, *args, **kwargs):
 
@@ -1021,12 +1060,13 @@ class ReportingUpdateCosts(View):
 #
 
 
-class TimeSheetsView(View):
+class TimeSheetsView(PermissionRequiredMixin, View):
     """ List a summary of all the available timesheets / reporting periods
         and status of the generation
     """
 
     http_method_names = ['get', ]
+    permission_required = 'reporting.read'
 
     def get(self, request, *args, **kwargs):
 
@@ -1115,24 +1155,26 @@ class TimeSheetsView(View):
         return render(request, 'FinancialReporting/timesheet_view.html', context)
 
 
-class TimeSheetsList(View):
+class TimeSheetsList(PermissionRequiredMixin, View):
     """ Show a page to view the timesheets
     """
     # TODO: loading of data may be handled through Ajax
 
     http_method_names = ['get', ]
+    permission_required = 'reporting.read'
 
     def get(self, request, *args, **kwargs):
         # TODO: implement!
         raise(Http404("Not implemented"))
 
 
-class TimeSheetsGenerate(View):
+class TimeSheetsGenerate(PermissionRequiredMixin, View):
     """ Show a page for the selection of the month
         Generation, modification and save is handled through Ajax
     """
 
     http_method_names = ['get', ]
+    permission_required = 'reporting.modify'
 
     def get(self, request, *args, **kwargs):
 
@@ -1146,13 +1188,14 @@ class TimeSheetsGenerate(View):
         return render(request, 'FinancialReporting/timesheet_generate.html', context)
 
 
-class TimeSheetsGenerateHints(View):
+class TimeSheetsGenerateHints(PermissionRequiredMixin, View):
     """ Handle the generation of hints for a year, both for hours and missions
     """
     # TODO: add checks to generate partial hints if presence data is not yet
     # available for certain months
 
     http_method_names = ['get', 'post']
+    permission_required = 'reporting.modify'
 
     def get(self, request, *args, **kwargs):
         # First pass. Look for reporting perdiods and check if any has missions.
@@ -1660,9 +1703,10 @@ class TimeSheetsGenerateHints(View):
         return by_m_h
 
 
-class TimeSheetsPrintSummary(View):
+class TimeSheetsPrintSummary(PermissionRequiredMixin, View):
 
     http_method_names = ['get', ]
+    permission_required = 'reporting.read'
 
     def get(self, request, *args, **kwargs):
         # Save the modified year situation as TimesheetHints (if some hints are alread
@@ -1689,12 +1733,13 @@ class TimeSheetsPrintSummary(View):
         return render(request, 'FinancialReporting/timesheet_printsummary.html', context)
 
 
-class TimeSheetsPrint(View):
+class TimeSheetsPrint(PermissionRequiredMixin, View):
     """ Show a timesheet to print
         Return a 404 not found if hints and saved data are not consistent
     """
 
     http_method_names = ['get', ]
+    permission_required = 'reporting.read'
 
     def get(self, request, *args, **kwargs):
         # Save the modified year situation as TimesheetHints (if some hints are alread
@@ -1720,11 +1765,12 @@ class TimeSheetsPrint(View):
             raise Http404(str(e))
 
 
-class TimeSheetsAjaxGenerate(View):
+class TimeSheetsAjaxGenerate(PermissionRequiredMixin, View):
     """ Handle the data exchange to generate a timesheet for a given month
     """
 
     http_method_names = ['get', 'post']
+    permission_required = 'reporting.modify'
 
     def get(self, request, *args, **kwargs):
         year = self.kwargs['year']
@@ -1880,21 +1926,23 @@ class TimeSheetsAjaxGenerate(View):
         return True
 
 
-class TimeSheetsAjaxView(View):
+class TimeSheetsAjaxView(PermissionRequiredMixin, View):
     """ Handle the data exchange to generate a timesheet for a given month
     """
 
     http_method_names = ['get', ]
+    permission_required = 'reporting.read'
 
     def get(self, request, *args, **kwargs):
         return JsonResponse({})
 
 
-class TimeSheetsAjaxSaveHints(View):
+class TimeSheetsAjaxSaveHints(PermissionRequiredMixin, View):
     """ Save hints in the database
     """
 
     http_method_names = ['post', ]
+    permission_required = 'reporting.modify'
 
     def post(self, request, *args, **kwargs):
         # Save the modified year situation as TimesheetHints (if some hints are alread

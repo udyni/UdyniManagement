@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import os
+import logging
+import ldap
+from django_auth_ldap.config import LDAPSearch, PosixGroupType
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,6 +36,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'AccountManagement.apps.AccountmanagementConfig',
     'FinancialReporting.apps.FinancialreportingConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -50,6 +55,67 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# LDAP authentication
+AUTH_LDAP_SERVER_URI = "ldaps://storage.udyni.lab"
+AUTH_LDAP_USER_DN_TEMPLATE = "uid=%(user)s,ou=People,dc=udyni,dc=lab"
+AUTH_LDAP_CACHE_TIMEOUT = 60
+
+# Account to search into ldap server
+AUTH_LDAP_BIND_DN = "cn=authbot,dc=udyni,dc=lab"
+AUTH_LDAP_BIND_PASSWORD = "thal1reiS0ie5D"
+
+# Search for users
+AUTH_LDAP_USER_SEARCH = LDAPSearch(
+    "ou=People,dc=udyni,dc=lab", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
+)
+
+# Search for groups
+AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
+    "ou=Groups,dc=udyni,dc=lab", ldap.SCOPE_SUBTREE, "(objectClass=posixGroup)"
+)
+
+# Group type
+AUTH_LDAP_GROUP_TYPE = PosixGroupType()
+
+# LDAP connection options for TLS
+AUTH_LDAP_CONNECTION_OPTIONS = {
+    ldap.OPT_X_TLS_CACERTFILE: r"/etc/ssl/certs/udyniCA.pem",
+    ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_ALLOW,
+    ldap.OPT_X_TLS_NEWCTX: 0
+}
+
+# User attribute map
+AUTH_LDAP_USER_ATTR_MAP = {
+    "first_name": "givenName",
+    "last_name": "sn",
+    "email": "mail",
+}
+
+# Associations between ldap and django groups
+AUTH_LDAP_USER_FLAGS_BY_GROUP = {
+    "is_active": "cn=Domain Users,ou=Groups,dc=udyni,dc=lab",
+    "is_staff": "cn=Administrators,ou=Groups,dc=udyni,dc=lab",
+    "is_superuser": "cn=Administrators,ou=Groups,dc=udyni,dc=lab"
+}
+
+
+
+
+#AUTH_LDAP_PROFILE_FLAGS_BY_GROUPS = {
+#    "is_awesome": ["cn=awesome,ou=groups,dc=whiteqube"]
+#}
+
+AUTHENTICATION_BACKENDS = [
+    "django_auth_ldap.backend.LDAPBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# Enable debug for ldap server connection
+logger = logging.getLogger('django_auth_ldap')
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.DEBUG)
+
 
 ROOT_URLCONF = 'UdyniManagement.urls'
 
