@@ -1,78 +1,99 @@
-{% extends "FinancialReporting/index.html" %}
-
+{% extends "UdyniManagement/page.html" %}
 {% block content %}
 
-<div id="edit-dialog" title="Edit">
-  <input type="hidden" value="" id="edit-id" />
-  <input type="number" min="0" max="0" step="0.1" id="edit-value" value="0.0" />
+<div class="card" id="edit-dialog" title="Edit">
+  <div class="card-body">
+    <input type="hidden" value="" id="edit-id" />
+    <input class="form-control" type="number" min="0" max="0" step="0.1" id="edit-value" value="0.0" />
+  </div>
 </div>
 
-<div class="alert alert-danger" role="alert" id="error-message">
+<div class="alert alert-danger d-none" role="alert" id="error-message">
   <span class="ui-icon ui-icon-alert"></span>
   <span id="error-text"></span>
 </div>
 
-<table>
-  <thead>
-    <td>Project / WP</td>
-    <td class="text-center">Total</td>
-    <td class="text-center">Prev.</td>
-    <td class="text-center">Jan</td>
-    <td class="text-center">Feb</td>
-    <td class="text-center">Mar</td>
-    <td class="text-center">Apr</td>
-    <td class="text-center">May</td>
-    <td class="text-center">Jun</td>
-    <td class="text-center">Jul</td>
-    <td class="text-center">Aug</td>
-    <td class="text-center">Sep</td>
-    <td class="text-center">Oct</td>
-    <td class="text-center">Nov</td>
-    <td class="text-center">Dec</td>
-    <td class="text-center">Next</td>
-    <td class="text-center">Sum</td>
-  </thead>
-  <tbody>
-    {% for project in project_list %}
-      <tr>
-        <td class="no-border">{{ project.name }}</td>
-        <td class="no-border text-center"><span id="prj_{{ project.id }}">{{ project.hours }}</span></td>
-        {% for h in project.bymonth %}
-          <td class="no-border text-center"><span class="editable-cell" id="m_{{ forloop.counter0 }}_{{ project.id }}">{{ h | floatformat:-1 }}</span></td>
+<div class="card mb-4">
+  <div class="card-body table-responsive">
+    <table cellspacing="0" cellpadding="0" class="table table-sm table-hover reporting">
+      <thead>
+        <th>Project / WP</th>
+        <th class="text-center">Total</th>
+        <th class="text-center">Prev.</th>
+        <th class="text-center">Jan</th>
+        <th class="text-center">Feb</th>
+        <th class="text-center">Mar</th>
+        <th class="text-center">Apr</th>
+        <th class="text-center">May</th>
+        <th class="text-center">Jun</th>
+        <th class="text-center">Jul</th>
+        <th class="text-center">Aug</th>
+        <th class="text-center">Sep</th>
+        <th class="text-center">Oct</th>
+        <th class="text-center">Nov</th>
+        <th class="text-center">Dec</th>
+        <th class="text-center">Next</th>
+        <th class="text-center">Sum</th>
+      </thead>
+      <tbody>
+        {% for project in project_list %}
+          <tr>
+            <td class="no-border">{{ project.name }}</td>
+            <td class="no-border text-center"><span id="prj_{{ project.id }}">{{ project.hours }}</span></td>
+            {% for h in project.bymonth %}
+              <td class="no-border text-center{% if project.id == -1 and h < 0 %} text-danger{% endif %}"><span class="editable-cell" id="m_{{ forloop.counter0 }}_{{ project.id }}">{{ h | floatformat:-1 }}</span></td>
+            {% endfor %}
+            <td class="no-border text-center"><span class="prjsum-cell" id="sum_{{ project.id }}">{{ project.hours }}</span></td>
+          </tr>
+          {% if project.has_missions %}
+            <tr>
+              <td colspan="2" class="no-border text-right">Mission hours:</td>
+              {% for h in project.mission_hours %}
+                <td class="no-border text-center"><span id="mission_{{ forloop.counter0 }}_{{ project.id }}">{{ h | floatformat:-1 }}</span></td>
+              {% endfor %}
+              <td class="no-border text-center"></td>
+            </tr>
+          {% endif %}
+          <tr>
+            <td colspan="2" class="hours-hint text-right">Available hours:</td>
+            {% for h in project.ava_hours %}
+              <td class="text-center"><span class="hours-hint" id="ava_{{ forloop.counter0 }}_{{ project.id }}">{{ h | floatformat:-1 }}</span></td>
+            {% endfor %}
+            <td class="text-center"><span class="sum-mismatch" id="mismatch_{{ project.id }}"></span></td>
+          </tr>
+
         {% endfor %}
-        <td class="no-border text-center"><span class="prjsum-cell" id="sum_{{ project.id }}">{{ project.hours }}</span></td>
-      </tr>
-      {% if project.has_missions %}
         <tr>
-          <td colspan="2" class="no-border text-right">Mission hours:</td>
-          {% for h in project.mission_hours %}
-            <td class="no-border text-center"><span id="mission_{{ forloop.counter0 }}_{{ project.id }}">{{ h | floatformat:-1 }}</span></td>
+          <td colspan="3">Total worked hours</td>
+          {% for h in ts_wh %}
+            <td class="text-center"><span id="tot_{{ forloop.counter }}">{{ h | floatformat:-1 }}</span></td>
           {% endfor %}
-          <td class="no-border text-center"></td>
+          <td></td>
+          <td class="text-center">{{ total_hours }}</td>
         </tr>
-      {% endif %}
-      <tr>
-        <td colspan="2" class="hours-hint text-right">Available hours:</td>
-        {% for h in project.ava_hours %}
-          <td class="text-center"><span class="hours-hint" id="ava_{{ forloop.counter0 }}_{{ project.id }}">{{ h | floatformat:-1 }}</span></td>
-        {% endfor %}
-        <td class="text-center"><span class="sum-mismatch" id="mismatch_{{ project.id }}"></span></td>
-      </tr>
+      </tbody>
+    </table>
 
-    {% endfor %}
-    <tr>
-      <td colspan="3">Total worked hours</td>
-      {% for h in ts_wh %}
-        <td class="text-center"><span id="tot_{{ forloop.counter }}">{{ h | floatformat:-1 }}</span></td>
-      {% endfor %}
-      <td></td>
-      <td class="text-center">{{ total_hours }}</td>
-    </tr>
-  </tbody>
-</table>
+    <div class="d-flex mb-4">
+      <button id="save-button" type="button" class="btn btn-primary btn-icon-split mr-4" aria-label="Save">
+        <span class="icon text-white-50">
+          <i class="fas fa-floppy-disk"></i>
+        </span>
+        <span class="text">Save</span>
+      </button>
+      <a href="{% url 'timesheets_view' %}" aria-label="Cancel" class="btn btn-danger btn-icon-split mr-4">
+        <span class="icon text-white-50">
+          <i class="fas fa-xmark"></i>
+        </span>
+        <span class="text">Cancel</span>
+      </a>
+    </div>
+  </div>
+</div>
 
-<button id="save-button" aria-label="Save" class="btn btn-default">Save</button>
-<a href="{% url 'timesheets_view' %}" aria-label="Cancel" class="btn btn-default">Cancel</a>
+{% endblock %}
+
+{% block page-javascript %}
 
 <script type="text/javascript">
 
@@ -151,12 +172,14 @@ function updateHintsTable(id, value) {
   tot_month = parseFloat($("#tot_"+month).text());
   delta = tot_month - sum_month;
   $("#m_"+month+"_-1").text(delta.toFixed(1));
+  if(delta >= 0) {
+    $("#m_"+month+"_-1").parent().removeClass('text-danger');
+  } else {
+    $("#m_"+month+"_-1").parent().addClass('text-danger');
+  }
 }
 
 $(document).ready(function() {
-
-  // Hide error message
-  $("#error-message").hide();
 
   // Create edit dialog
   $("#edit-dialog").dialog({

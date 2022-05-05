@@ -1,60 +1,80 @@
-{% extends "FinancialReporting/index.html" %}
+{% extends "UdyniManagement/page.html" %}
 {% load tr_month %}
 {% load generic %}
 
 {% block content %}
-<p>
-  <a href="{% url 'timesheets_view' %}" aria-label="Back" class="btn btn-default"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span> Back</a>
-</p>
+<a href="{% url 'timesheets_view' %}" class="btn btn-primary btn-icon-split mb-4" aria-label="Back">
+  <span class="icon text-white-50">
+      <i class="fas fa-circle-arrow-left"></i>
+  </span>
+  <span class="text">Back</span>
+</a>
+
 
 {% if error_message %}
-<div class="alert alert-danger">
-{{ error_message }}
+<div class="card border-left-danger">
+  <div class="card-body" role="alert">
+    {{ error_message }}
+  </div>
 </div>
 {% endif %}
 
 <form action="" method="post">
-{% csrf_token %}
+  {% csrf_token %}
 
-{% for month, data_by_month in data %}
-  <div>
-    <h4>{{ month | month_num2en }}</h4>
-
-    <table cellpadding="0" cellspacing="0">
-      <colgroup>
-            <col class="col-md-2">
+  {% for month, data_by_month in data %}
+    <div class="card mb-2">
+      <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">{{ month | month_num2en }}</h6>
+      </div>
+      <div class="card-body table-responsive">
+        <table cellspacing="0" cellpadding="0" class="table table-sm table-hover reporting">
+          <colgroup>
+            <col class="col-md-2" />
             {% for p in periods %}
-              <col class="">
+              <col class="" />
             {% endfor %}
-        </colgroup>
-      <thead>
-        <td>Date</td>
-        {% for p in periods %}
-          <td class="period-header">
-            <input type="checkbox" id="{{ month }}_{{ p.pk }}" />
-            {{ p.project.name }}{% if p.wp %} {{ p.wp.name }}{% endif %}
-          </td>
-        {% endfor %}
-      </thead>
-      <tbody>
-        {% for day, data_by_day in data_by_month %}
-          <tr>
-            <td class="col">{{ month | month_num2en }} {{ day }}<sup>{{ day | ordinal}}</sup></td>
-            {% for check in data_by_day %}
-              <td>
-                {% if check %}
-                  <input type="checkbox" id="{{ month }}_{{ check.pid }}_{{ day }}" name="{{ month }}_{{ check.pid }}_{{ day }}" {% if check.checked %}checked="checked" {% endif %}/>
-                {% endif %}
-              </td>
+          </colgroup>
+          <thead>
+            <th>Date</th>
+            {% for p in periods %}
+              <th class="period-header">
+                <input class="form-check-input" type="checkbox" id="{{ month }}_{{ p.pk }}" />
+                {{ p.project.name }}{% if p.wp %} {{ p.wp.name }}{% endif %}
+              </th>
             {% endfor %}
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </thead>
+          <tbody>
+            {% for day, data_by_day in data_by_month %}
+              <tr>
+                <td class="col">{{ month | month_num2en }} {{ day }}<sup>{{ day | ordinal}}</sup></td>
+                {% for check in data_by_day %}
+                  <td>
+                    {% if check %}
+                      <input class="form-check-input" type="checkbox" id="{{ month }}_{{ check.pid }}_{{ day }}" name="{{ month }}_{{ check.pid }}_{{ day }}" {% if check.checked %}checked="checked" {% endif %}/>
+                    {% endif %}
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endfor %}
+  <div class="mb-4">
+    <button type="submit" class="btn btn-primary btn-icon-split" aria-label="Continue">
+      <span class="icon text-white-50">
+        <i class="fas fa-floppy-disk"></i>
+      </span>
+      <span class="text">Continue</span>
+    </button>
   </div>
-{% endfor %}
-<button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span> Continue</button>
 </form>
+
+{% endblock %}
+
+{% block page-javascript %}
 
 <script type="text/javascript">
 
@@ -93,7 +113,6 @@ $(document).ready(function() {
       m = $(this).prop('id').match(/^(\d+)_(\d+)$/);
       if(m != null) {
         // Month cell
-        console.log("1) MONTH: " + m[1] + ", PID: ", m[2]);
         if($(this).prop('checked')) {
           // Select all cells with id starting with month and pid
           $("input:checkbox[id^='" + m[1] + "_" + m[2] + "_']").each(function() {
@@ -105,7 +124,6 @@ $(document).ready(function() {
             var re = RegExp("^" + m[1] + "_(\\d+)$");
             n = $(this).prop('id').match(re);
             if(n != null && n[1] != m[2]) {
-              console.log("2) MONTH: " + m[1] + ", PID: ", n[1]);
               $(this).prop('checked', false);
             }
           });

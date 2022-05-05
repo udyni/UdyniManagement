@@ -1,101 +1,9 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-
+from Projects import models as PrjModels
 
 # Financial reporting models
 # ==========================
-
-
-class Researcher(models.Model):
-    """ Researchers' registry
-    """
-    # Name
-    name = models.CharField(max_length=200)
-    # Surname
-    surname = models.CharField(max_length=200)
-
-    class Meta:
-        ordering = ["surname", "name"]
-        constraints = [
-            models.UniqueConstraint(fields=['name', 'surname'], name="%(app_label)s_%(class)s_unique"),
-        ]
-
-    def __str__(self):
-        return self.name + " " + self.surname
-
-
-class ResearcherRole(models.Model):
-    """ Researcher role for each period
-    """
-    researcher = models.ForeignKey(Researcher, on_delete=models.CASCADE)
-    # Role
-    RESEARCHER = "RI"
-    SENIOR = "PR"
-    DIRECTOR = "DR"
-    role = models.CharField(
-        max_length=2,
-        choices=[
-            (RESEARCHER, "Researcher"),
-            (SENIOR, "Senior Researcher"),
-            (DIRECTOR, "Research Director"),
-        ],
-        default=RESEARCHER,
-    )
-    start_date = models.DateField()
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['researcher', 'start_date'], name="%(app_label)s_%(class)s_unique"),
-        ]
-        ordering = ["researcher", "start_date"]
-
-    def __str__(self):
-        return "{0:s} from {1:s}".format(self.get_role_display(), self.start_date.isoformat())
-
-
-class Project(models.Model):
-    """ Projects' task registry
-    """
-    name = models.CharField(max_length=100)
-    agency = models.CharField(max_length=200)
-    reference = models.CharField(max_length=200)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['name'], name="%(app_label)s_%(class)s_unique"),
-        ]
-        ordering = ["name", ]
-
-    def __str__(self):
-        return self.name + " (" + self.agency + ", " + self.reference + ")"
-
-    def get_workpackages(self):
-        return WorkPackage.objects.filter(project=self)
-
-    workpackages = property(get_workpackages)
-
-
-class WorkPackage(models.Model):
-    """ Work packages in projects
-        NOTE: every project have an unnamed WP that means generic work on a project
-    """
-    # Project
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    # WP name
-    name = models.CharField(max_length=100)
-    # WP description
-    desc = models.CharField(max_length=200, default="")
-
-    def __str__(self):
-        # return "{0:s} of {1!s}".format(self.name, self.project)
-        return "{0:s}: {1:s}".format(self.name, self.desc)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['project', 'name'], name="%(app_label)s_%(class)s_unique"),
-        ]
-        ordering = ["project__name", "name", ]
-
 
 class BankHoliday(models.Model):
     """ List of bank holidays
@@ -120,28 +28,10 @@ class BankHoliday(models.Model):
             return self.name + " on {0!s} {1:d}".format(self.get_month_display(), self.day)
 
 
-class PersonnelCost(models.Model):
-    """ Registry of personnel cost by year
-    """
-    researcher = models.ForeignKey(Researcher, on_delete=models.CASCADE)
-    year = models.PositiveIntegerField()
-    working_hours = models.PositiveIntegerField()
-    cost = models.FloatField()
-
-    def __str__(self):
-        return "{0!s} cost of {1:d}: {2:.2f}".format(self.researcher, self.year, self.cost)
-
-    class Meta:
-        ordering = ["year", "researcher"]
-        constraints = [
-            models.UniqueConstraint(fields=['year', 'researcher'], name="%(app_label)s_%(class)s_unique"),
-        ]
-
-
 class EpasCode(models.Model):
     """ EPAS absence codes
     """
-    code = models.CharField(max_length=32, unique=True)
+    code = models.CharField(max_length=32, unique=True, db_index=True)
     NONE = ""
     HOLIDAYS = "HO"
     MISSION = "MI"
@@ -171,13 +61,31 @@ class EpasCode(models.Model):
         ordering = ["code", ]
 
 
+class PersonnelCost(models.Model):
+    """ Registry of personnel cost by year
+    """
+    researcher = models.ForeignKey(PrjModels.Researcher, on_delete=models.CASCADE)
+    year = models.PositiveIntegerField(db_index=True)
+    working_hours = models.PositiveIntegerField()
+    cost = models.FloatField()
+
+    def __str__(self):
+        return "{0!s} cost of {1:d}: {2:.2f}".format(self.researcher, self.year, self.cost)
+
+    class Meta:
+        ordering = ["year", "researcher"]
+        constraints = [
+            models.UniqueConstraint(fields=['year', 'researcher'], name="%(app_label)s_%(class)s_unique"),
+        ]
+
+
 class PresenceData(models.Model):
     """ Presence data; hours, TS hours, absences, missions, ecc.
     """
     # Reserarcher
-    researcher = models.ForeignKey(Researcher, on_delete=models.CASCADE)
+    researcher = models.ForeignKey(PrjModels.Researcher, on_delete=models.CASCADE)
     # Working day
-    day = models.DateField()
+    day = models.DateField(db_index=True)
     # Actual worked hours (from accounting system)
     hours = models.FloatField()
     # Corrected timesheet hours
@@ -203,13 +111,13 @@ class PresenceData(models.Model):
 class Reporting(models.Model):
     """ Reporting of hours worked on projects
     """
-    researcher = models.ForeignKey(Researcher, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    wp = models.ForeignKey(WorkPackage, on_delete=models.CASCADE, null=True, blank=True)
-    rp_start = models.DateField()
-    rp_end = models.DateField()
+    researcher = models.ForeignKey(PrjModels.Researcher, on_delete=models.CASCADE)
+    project = models.ForeignKey(PrjModels.Project, on_delete=models.CASCADE)
+    wp = models.ForeignKey(PrjModels.WorkPackage, on_delete=models.CASCADE, null=True, blank=True)
+    rp_start = models.DateField(db_index=True)
+    rp_end = models.DateField(db_index=True)
     hours = models.FloatField()
-    has_missions = models.BooleanField(default=False)
+    has_missions = models.BooleanField(db_index=True)
     cost = models.ForeignKey(PersonnelCost, on_delete=models.PROTECT)
 
     class Meta:
@@ -250,8 +158,8 @@ class TimesheetHint(models.Model):
     """ Hints to generate timesheets
     """
     reporting_period = models.ForeignKey(Reporting, on_delete=models.CASCADE)
-    year = models.IntegerField()
-    month = models.IntegerField()
+    year = models.IntegerField(db_index=True)
+    month = models.IntegerField(db_index=True)
     hours = models.FloatField()
 
     class Meta:
@@ -298,7 +206,7 @@ class TimesheetHours(models.Model):
     """ Hours recorded on timesheets for each day
     """
     reporting_period = models.ForeignKey(Reporting, on_delete=models.CASCADE)
-    day = models.DateField()
+    day = models.DateField(db_index=True)
     hours = models.FloatField()
 
     class Meta:

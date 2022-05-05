@@ -1,21 +1,15 @@
+import re
+import pandas as pd
+
 from django import forms
 from django.db.models import Q
-from .models import Researcher, ResearcherRole, Project, WorkPackage, PersonnelCost, Reporting
 from django.core.exceptions import ValidationError
-import pandas as pd
-import re
 
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Div, Field, HTML
 
-class ResearcherRoleForm(forms.ModelForm):
-    # Explicitly specify start_date to set date format
-    start_date = forms.DateField(input_formats=['%d/%m/%Y', '%d-%m-%Y'], widget=forms.DateInput())
-
-    class Meta:
-        model = ResearcherRole
-        fields = ['researcher', 'role', 'start_date']
-        widgets = {
-            'researcher': forms.HiddenInput,
-        }
+from Projects.models import Researcher, Project, WorkPackage
+from .models import PersonnelCost, Reporting
 
 
 class PresenceInputForm(forms.Form):
@@ -60,7 +54,7 @@ class EpasCodeUpdateForm(forms.Form):
             file.seek(0)
         except Exception as e:
             print(e)
-            raise ValidationError("File is not a valid table of EPAS codes")
+            raise ValidationError("File is not a valid table of EPAS codes (Error: {0!s})".format(e))
 
 
 class ReportingAddForm(forms.Form):
@@ -75,9 +69,8 @@ class ReportingAddForm(forms.Form):
 
     # WP and hours information
     wp_1 = forms.ModelChoiceField(label="WP", queryset=WorkPackage.objects.none(), required=False)
-    wp_1.number = 1
     hours_input_1 = forms.CharField(label="Hours", widget=forms.NumberInput(attrs={'min': '0', 'step': '0.1'}), required=False)
-    hours_input_1.number = 1
+    has_missions_1 = forms.BooleanField(label="Has missions", widget=forms.CheckboxInput(), required=False)
 
     def __init__(self, *args, **kwargs):
 
@@ -85,6 +78,7 @@ class ReportingAddForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         # Add missing fields
+        wp_number = 1
         if self.is_bound:
             qs = WorkPackage.objects.none()
             if 'project' in self.data:
@@ -105,21 +99,55 @@ class ReportingAddForm(forms.Form):
                 m = re.match(r"wp_(\d+)", k)
                 if m is not None:
                     number = int(m.groups()[0])
+                    if number > wp_number:
+                        wp_number = number
                     name = "wp_{0:d}".format(number)
                     if name not in self.fields:
                         wp = forms.ModelChoiceField(label="WP", queryset=qs, required=False)
-                        wp.number = number
                         h = forms.CharField(label="Hours", widget=forms.NumberInput(attrs={'min': '0', 'step': '0.1'}), required=False)
-                        h.number = number
+                        hm = forms.BooleanField(label="Has missions", widget=forms.CheckboxInput(), required=False)
                         self.fields[name] = wp
                         self.fields["hours_input_{0:d}".format(number)] = h
+                        self.fields["has_missions_{0:d}".format(number)] = hm
                     else:
                         self.fields[name].queryset = qs
 
-        # Set number on all fields
-        for k, v in self.fields.items():
-            if not hasattr(v, 'number'):
-                setattr(v, 'number', 0)
+        # Create form helper
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+
+        wps = []
+        for i in range(1, wp_number + 1, 1):
+            el = Div(
+                Div(
+                    Field("wp_{0:d}".format(i)),
+                    Field("hours_input_{0:d}".format(i)),
+                    Field("has_missions_{0:d}".format(i)),
+                    css_class="card-body d-flex justify-content-between",
+                ),
+                css_class="card border-left-primary mb-2",
+                css_id="wp_{0:d}".format(i),
+            )
+            wps.append(el)
+
+        self.helper.layout = Layout(
+            Div(
+                'researcher',
+                'project',
+                'cost',
+                'rp_start',
+                'rp_end',
+            ),
+            Div(
+                *wps,
+                css_id='wp_reporting',
+            ),
+            HTML('''
+                 <button type="button" id="add_wp" class="btn btn-primary btn-icon-split" aria-label="Add WP">
+                 <span class="icon text-white-50"><i class="fas fa-circle-plus"></i></span>
+                 <span class="text">Add WP</span>
+                 </button>''')
+        )
 
     # Custom visible_fields method that propagate number attribute
     def visible_fields(self):

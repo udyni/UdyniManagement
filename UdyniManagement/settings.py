@@ -38,12 +38,17 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'AccountManagement.apps.AccountmanagementConfig',
     'FinancialReporting.apps.FinancialreportingConfig',
+    'Projects.apps.ProjectsConfig',
+    'Accounting.apps.AccountingConfig',
+    'Tags.apps.TagsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 'widget_tweaks',
+    'crispy_forms',
 ]
 
 MIDDLEWARE = [
@@ -63,7 +68,7 @@ AUTH_LDAP_CACHE_TIMEOUT = 60
 
 # Account to search into ldap server
 AUTH_LDAP_BIND_DN = "cn=authbot,dc=udyni,dc=lab"
-AUTH_LDAP_BIND_PASSWORD = "thal1reiS0ie5D"
+AUTH_LDAP_BIND_PASSWORD = "********"
 
 # Search for users
 AUTH_LDAP_USER_SEARCH = LDAPSearch(
@@ -98,9 +103,6 @@ AUTH_LDAP_USER_FLAGS_BY_GROUP = {
     "is_staff": "cn=Administrators,ou=Groups,dc=udyni,dc=lab",
     "is_superuser": "cn=Administrators,ou=Groups,dc=udyni,dc=lab"
 }
-
-
-
 
 #AUTH_LDAP_PROFILE_FLAGS_BY_GROUPS = {
 #    "is_awesome": ["cn=awesome,ou=groups,dc=whiteqube"]
@@ -148,7 +150,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'management',
         'USER' : 'management',
-        'PASSWORD' : 'ighech5ucha7ka',
+        'PASSWORD' : '********',
         'HOST' : 'storage.udyni.lab',
         'PORT' : '5432',
         'OPTIONS': {'sslmode': 'require'},
@@ -188,7 +190,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-# DATE_INPUT_FORMATS = ['%d/%m/%Y']
+DATE_INPUT_FORMATS = ['%d/%m/%Y', '%Y-%m-%d']
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
@@ -197,11 +199,17 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'root')
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
-    # os.path.join(BASE_DIR, 'bootstrap'),
-    os.path.join(BASE_DIR, 'bootstrap3'),
 )
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Crispy forms template pack
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
+CRISPY_FAIL_SILENTLY = not DEBUG
+
+# SIGLA
+SIGLA_USERNAME = "app.ifn"
+SIGLA_PASSWORD = "********"

@@ -1,62 +1,86 @@
-{% extends "FinancialReporting/index.html" %}
+{% extends "UdyniManagement/page.html" %}
 {% load tr_month %}
 {% load generic %}
 
 {% block content %}
 
-<p>
-  <a href="{% url 'presencedata_view' %}" aria-label="Back" class="btn btn-default"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span> Back</a>
-</p>
-<p>
-  Total hours: {{ total_hours | floatformat:-1 }}<br />
-  Nominal working hours: {{ working_hours | floatformat:-1 }}<br />
-  Missing hours: {{ missing_hours | floatformat:-1 }}<br />
-  Minimum mission days to report: {{ missions2report }}<br />
-  Missions reported: <span id="missions_reported">0</span>
-</p>
+<a href="{% url 'presencedata_view' %}" class="btn btn-primary btn-icon-split mb-4" aria-label="Back">
+  <span class="icon text-white-50">
+      <i class="fas fa-circle-arrow-left"></i>
+  </span>
+  <span class="text">Back</span>
+</a>
 
 <form action="" method="post" id="import_form">
 {% csrf_token %}
-<table>
-  <thead>
-    <tr>
-      <th>Report</th>
-      <th>Date</th>
-      <th>Day of the week</td>
-    </tr>
-  </thead>
-  <tbody>
-    {% for month, data in data_by_month.items %}
-      <tr>
-        <td colspan="4">
-          <h4>{{ month | month_num2en }}</h4>
-          <p>
-            <input type="checkbox" name="rep_{{ month }}_all" id="rep_{{ month }}_all" />
-            Total hours: {{ data.tot_hours | floatformat:-1 }} -
-            Suggested hours: {{ data.working_hours | floatformat:-1 }} -
-            {% if data.missions.all %}
-              Suggested minimum missions to report: {{ data.missions2report }}</p>
-            {% endif %}
-        </td>
-      </tr>
-      {% if data.missions.all %}
-        {% for m in data.missions %}
-          <tr>
-            <td><input type="checkbox" selected="" name="rep_{{ m.day | date:'m' }}_{{ m.day | date:'d' }}" /></td>
-            <td>{{ m.day }}</td>
-            <td>{{ m.day | date:'l' }}</td>
-          </tr>
-        {% endfor %}
-      {% endif %}
-    {% endfor %}
-  </tbody>
-</table>
-<button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span> Continue</button>
+
+<div class="card mb-4 border-left-primary">
+  <div class="card-body table-responsive">
+    Total hours: {{ total_hours | floatformat:-1 }}<br />
+    Nominal working hours: {{ working_hours | floatformat:-1 }}<br />
+    Missing hours: {{ missing_hours | floatformat:-1 }}<br />
+    Minimum mission days to report: {{ missions2report }}<br />
+    Missions reported: <span id="missions_reported">0</span>
+  </div>
+</div>
+
+{% for month, data in data_by_month.items %}
+  {% if data.missions.all %}
+    <div class="card mb-2">
+      <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">{{ month | month_num2en }}</h6>
+      </div>
+      <div class="card-body table-responsive">
+        <p>
+          <input type="checkbox" class="checkboxinput" name="rep_{{ month }}_all" id="rep_{{ month }}_all" />
+          Total hours: {{ data.tot_hours | floatformat:-1 }} -
+          Suggested hours: {{ data.working_hours | floatformat:-1 }} -
+          {% if data.missions.all %}
+            Suggested minimum missions to report: {{ data.missions2report }}
+          {% endif %}
+        </p>
+
+        <table cellspacing="0" cellpadding="0" class="table table-sm table-hover reporting">
+          <thead>
+            <tr>
+              <th>Report</th>
+              <th>Date</th>
+              <th>Day of the week</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in data.missions %}
+              <tr>
+                <td><input type="checkbox" class="checkboxinput" selected="" name="rep_{{ m.day | date:'m' }}_{{ m.day | date:'d' }}" /></td>
+                <td>{{ m.day }}</td>
+                <td>{{ m.day | date:'l' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+{% endfor %}
+
+<div class="d-flex flex-row mb-4">
+  <button type="submit" class="btn btn-primary btn-icon-split mb-4">
+    <span class="icon text-white-50">
+        <i class="fas fa-circle-arrow-right"></i>
+    </span>
+    <span class="text">Continue</span>
+  </button>
+</div>
 </form>
+
 
 <div id="import_dialog" title="Processing in progress">
     <p>Please wait ...</p>
 </div>
+
+{% endblock %}
+
+{% block page-javascript %}
 
 <script>
 $('#import_dialog').dialog({

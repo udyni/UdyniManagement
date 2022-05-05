@@ -16,10 +16,55 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from . import views
+from .menu import menu_include
+
 
 urlpatterns = [
-    path('', views.index),
+    path('', views.EmptyView.as_view(), name="main_page"),
     path('accounts/', include('AccountManagement.urls')),
+    path('projects/', include('Projects.urls')),
+    path('accounting/', include('Accounting.urls')),
     path('reporting/', include('FinancialReporting.urls')),
+    path('sigla/', include('sigla.urls')),
     path('admin/', admin.site.urls),
+]
+
+menu = [
+    {
+        'name': 'Project Management',
+        'sections': [
+            menu_include('Projects.urls'),
+            menu_include('Accounting.urls'),
+            menu_include('FinancialReporting.urls'),
+        ],
+    },
+    {
+        'name': 'Services',
+        'sections': [
+            {
+                'name': 'Request VPN certificate',
+                'link': '/git',
+                'subsections': [],
+                'permissions': [],
+            },
+            {
+                'name': 'Git',
+                'link': '/git',
+                'subsections': [],
+                'permissions': [],
+            },
+            {
+                'name': 'Wiki',
+                'link': '/xwiki',
+                'subsections': [],
+                'permissions': [],
+            },
+            {
+                'name': 'Postgres Admin',
+                'link': '/pgadmin',
+                'subsections': [],
+                'permissions': ['is_staff', ],
+            },
+        ],
+    },
 ]

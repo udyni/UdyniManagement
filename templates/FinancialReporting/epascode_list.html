@@ -1,82 +1,106 @@
-{% extends "FinancialReporting/index.html" %}
+{% extends "UdyniManagement/page.html" %}
 {% load page_tags %}
 {% block content %}
 
-<a href="{% url 'epas_import' %}" class="btn btn-default" aria-label="Import codes"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Update codes</a>
+<a href="{% url 'epas_import' %}" class="btn btn-primary btn-icon-split mb-4" aria-label="Update codes">
+  <span class="icon text-white-50">
+      <i class="fas fa-file-import"></i>
+  </span>
+  <span class="text">Update codes</span>
+</a>
 
 <form id="code_update_form">
-{% csrf_token %}
-<table cellspacing="0" cellpadding="0">
-  <thead>
-    <tr>
-      <td>EPAS code</td>
-      <td>Description</td>
-      <td>TS Code</td>
-    </tr>
-  <thead>
-  <tbody>
-    {% for code in page_obj %}
-      <tr>
-        <td>{{ code.code }}</td>
-        <td>{{ code.description | escape }}</td>
-        <td>
-            <select name="ts_{{ code.id }}">
-                {% for tag, label in choices %}
-                    {{ tag }}
-                    {% if tag == code.ts_code %}
-                        <option value="{{ tag }}" selected="selected">{{ label }}</option>
-                    {% else %}
-                        <option value="{{ tag }}">{{ label }}</option>
-                    {% endif %}
-                {% endfor %}
-            </select>
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-<input type="submit" value="Save" class="btn btn-default" />
+  {% csrf_token %}
+  <div class="card mb-4">
+    <div class="card-body table-responsive">
+      <table cellspacing="0" cellpadding="0" class="table table-sm table-hover reporting">
+        <thead>
+          <tr>
+            <th>EPAS code</th>
+            <th>Description</th>
+            <th>TS Code</th>
+          </tr>
+        <thead>
+        <tbody>
+          {% for code in page_obj %}
+            <tr>
+              <td>{{ code.code }}</td>
+              <td>{{ code.description | escape }}</td>
+              <td>
+                  <select class="form-control input-sm" name="ts_{{ code.id }}">
+                      {% for tag, label in choices %}
+                          {{ tag }}
+                          {% if tag == code.ts_code %}
+                              <option value="{{ tag }}" selected="selected">{{ label }}</option>
+                          {% else %}
+                              <option value="{{ tag }}">{{ label }}</option>
+                          {% endif %}
+                      {% endfor %}
+                  </select>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="mb-4">
+        <button type="submit" class="btn btn-primary btn-icon-split" aria-label="Save">
+          <span class="icon text-white-50">
+            <i class="fas fa-floppy-disk"></i>
+          </span>
+          <span class="text">Save</span>
+        </button>
+      </div>
+
+      <div class="d-flex justify-content-center">
+        <nav aria-label="Page navigation" class="text-center">
+          <ul class="pagination">
+
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous"><i class="fas fa-chevron-left" aria-hidden="true"></i></a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+              <a class="page-link" href="" aria-label="Previous"><i class="fas fa-chevron-left" aria-hidden="true"></i></a>
+            </li>
+            {% endif %}
+
+            {% elided_page_range paginator page_obj.number as page_range %}
+            {% for p in page_range %}
+              {% if p == page_obj.number %}
+              <li class="page-item active">
+                <a class="page-link" href="?page={{ p }}" aria-label="{{ p }}">{{ p }}</a>
+              </li>
+              {% elif p == '…' %}
+              <li class="page-item disabled"><a class="page-link" href="" aria-label="{{ p }}">{{ p }}</a></li>
+              {% else %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ p }}" aria-label="{{ p }}">{{ p }}</a>
+              </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next"><i class="fas fa-chevron-right" aria-hidden="true"></i></a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+              <a class="page-link" href="" aria-label="Next"><i class="fas fa-chevron-right" aria-hidden="true"></i></a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
 </form>
 
-<nav aria-label="Page navigation" class="text-center">
-  <ul class="pagination">
 
-    {% if page_obj.has_previous %}
-    <li>
-      <a href="?page={{ page_obj.previous_page_number }}" aria-label="Previous"><span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span></a>
-    </li>
-    {% else %}
-    <li class="disabled">
-      <a href="" aria-label="Previous"><span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span></a>
-    </li>
-    {% endif %}
+{% endblock %}
 
-    {% elided_page_range paginator page_obj.number as page_range %}
-    {% for p in page_range %}
-      {% if p == page_obj.number %}
-      <li class="active">
-        <a href="?page={{ p }}" aria-label="{{ p }}">{{ p }}</a>
-      </li>
-      {% elif p == '…' %}
-      <li class="disabled"><a href="" aria-label="{{ p }}">{{ p }}</a></li>
-      {% else %}
-      <li>
-        <a href="?page={{ p }}" aria-label="{{ p }}">{{ p }}</a>
-      </li>
-      {% endif %}
-    {% endfor %}
-
-    {% if page_obj.has_next %}
-    <li>
-      <a href="?page={{ page_obj.next_page_number }}" aria-label="Next"><span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
-    </li>
-    {% else %}
-    <li class="disabled">
-      <a href="" aria-label="Next"><span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span></a>
-    </li>
-    {% endif %}
-  </ul>
-</nav>
+{% block page-javascript %}
 
 <script>
 $( function() {

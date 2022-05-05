@@ -1,22 +1,25 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, FileResponse
 
 from django.db.models import Count, Sum, Q, F, Value
 from django.db.models.functions import ExtractYear, ExtractMonth, Concat
-from .models import Researcher, ResearcherRole, Project, WorkPackage, BankHoliday, PersonnelCost, PresenceData, Reporting, EpasCode, TimesheetHint, TimesheetMissionHint, TimesheetHours
+from Projects.models import Researcher, ResearcherRole, WorkPackage
+from .models import BankHoliday, PersonnelCost, PresenceData, Reporting, EpasCode, TimesheetHint, TimesheetMissionHint, TimesheetHours
 
-from .forms import ResearcherRoleForm, PresenceInputForm, EpasCodeUpdateForm, ReportingAddForm
+from .forms import PresenceInputForm, EpasCodeUpdateForm, ReportingAddForm
 
 from .utils import process_presences, summarize_presences, serialize_presences
-from .utils import unserialize_presences, print_context, check_presences_unique, check_bank_holiday
-from .utils import GenerateTimesheetData, LoadTimesheetData
+from .utils import unserialize_presences, check_presences_unique, check_bank_holiday
+from .utils import GenerateTimesheetData, LoadTimesheetData, CheckTimesheetData
+from .print import PrintPFDTimesheet
 
-from .templatetags import tr_month
+from Tags.templatetags import tr_month
 
 from django.views import View
-from django.views.generic.list import ListView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from UdyniManagement.menu import UdyniMenu
+from UdyniManagement.views import ListViewMenu, CreateViewMenu, UpdateViewMenu, DeleteViewMenu
+
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
@@ -31,251 +34,60 @@ import random
 
 
 # =============================================
-# MAIN INDEX VIEW
-
-def index(request):
-    context = {
-        'subtitle': "Welcome!"
-    }
-    return render(request, 'FinancialReporting/index.html', context)
-
-
-# =============================================
-# RESEARCHERS VIEWS
-
-class ResearcherList(PermissionRequiredMixin, ListView):
-    model = Researcher
-    permission_required = 'reporting.read'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Researchers"
-        researchers = list(context['researcher_list'].values())
-        for r in researchers:
-            r['roles'] = ResearcherRole.objects.filter(researcher=r['id'])
-        print(researchers)
-        context['researcher_list'] = researchers
-        return context
-
-
-class ResearcherCreate(PermissionRequiredMixin, CreateView):
-    model = Researcher
-    fields = ['name', 'surname', 'role']
-    success_url = reverse_lazy('researcher_view')
-    permission_required = 'reporting.modify'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Add new researcher"
-        return context
-
-
-class ResearcherUpdate(PermissionRequiredMixin, UpdateView):
-    model = Researcher
-    fields = ['name', 'surname', 'role']
-    success_url = reverse_lazy('researcher_view')
-    permission_required = 'reporting.modify'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Modify researcher"
-        return context
-
-
-class ResearcherDelete(PermissionRequiredMixin, DeleteView):
-    model = Researcher
-    success_url = reverse_lazy('researcher_view')
-    permission_required = 'reporting.modify'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Delete researcher"
-        return context
-
-
-class ResearcherRoleCreate(PermissionRequiredMixin, CreateView):
-    model = ResearcherRole
-    form_class = ResearcherRoleForm
-    success_url = reverse_lazy('researcher_view')
-    permission_required = 'reporting.modify'
-
-    def get_initial(self):
-        return {'researcher': self.kwargs['researcher']}
-
-    def get_context_data(self, **kwargs):
-        r = get_object_or_404(Researcher, pk=self.kwargs['researcher'])
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Add new role for {0!s}".format(r)
-        context['researcher'] = r
-        return context
-
-
-class ResearcherRoleUpdate(PermissionRequiredMixin, UpdateView):
-    model = ResearcherRole
-    success_url = reverse_lazy('researcher_view')
-    form_class = ResearcherRoleForm
-    permission_required = 'reporting.modify'
-
-    def get_context_data(self, **kwargs):
-        r = get_object_or_404(Researcher, pk=self.kwargs['researcher'])
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Modify role for {0!s}".format(r)
-        context['researcher'] = r
-        return context
-
-
-class ResearcherRoleDelete(PermissionRequiredMixin, DeleteView):
-    model = ResearcherRole
-    success_url = reverse_lazy('researcher_view')
-    permission_required = 'reporting.modify'
-
-    def get_context_data(self, **kwargs):
-        r = get_object_or_404(Researcher, pk=self.kwargs['researcher'])
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Delete role for {0!s}".format(r)
-        context['researcher'] = r
-        print(context)
-        return context
-
-
-# =============================================
-# PROJECTS and WORKPACKAGES
-#
-class ProjectList(PermissionRequiredMixin, ListView):
-    model = Project
-    permission_required = 'reporting.read'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Projects & Work Packages"
-        return context
-
-
-class ProjectCreate(PermissionRequiredMixin, CreateView):
-    model = Project
-    fields = ['name', 'agency', 'reference']
-    success_url = reverse_lazy('project_view')
-    permission_required = 'reporting.modify'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Add new project"
-        return context
-
-
-class ProjectUpdate(PermissionRequiredMixin, UpdateView):
-    model = Project
-    fields = ['name', 'agency', 'reference']
-    success_url = reverse_lazy('project_view')
-    permission_required = 'reporting.modify'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Modify project"
-        return context
-
-
-class ProjectDelete(PermissionRequiredMixin, DeleteView):
-    model = Project
-    success_url = reverse_lazy('project_view')
-    permission_required = 'reporting.modify'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Delete project"
-        return context
-
-
-# =============================================
-# Work packages
-#
-class WorkPackageCreate(PermissionRequiredMixin, CreateView):
-    model = WorkPackage
-    fields = ['name', 'desc']
-    success_url = reverse_lazy('project_view')
-    permission_required = 'reporting.read'
-
-    def form_valid(self, form):
-        project = get_object_or_404(Project, pk=self.kwargs['project'])
-        form.instance.project = project
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        project = get_object_or_404(Project, pk=self.kwargs['project'])
-        context['subtitle'] = "Add new work package to project " + str(project)
-        return context
-
-
-class WorkPackageUpdate(PermissionRequiredMixin, UpdateView):
-    model = WorkPackage
-    fields = ['name', 'desc']
-    success_url = reverse_lazy('project_view')
-    permission_required = 'reporting.modify'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Modify work package of project " + str(context['workpackage'].project)
-        return context
-
-
-class WorkPackageDelete(DeleteView):
-    model = WorkPackage
-    success_url = reverse_lazy('project_view')
-    permission_required = 'reporting.modify'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Delete work package of project " + str(context['workpackage'].project)
-        return context
-
-
-# =============================================
 # PERSONNEL COSTS
 #
-class PersonnelCostList(PermissionRequiredMixin, ListView):
+class PersonnelCostList(PermissionRequiredMixin, ListViewMenu):
     model = PersonnelCost
     permission_required = 'reporting.read'
 
+    def get_queryset(self):
+        return PersonnelCost.objects.all().order_by('researcher', 'year')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Personnel cost"
+        context['title'] = "Personnel cost"
         return context
 
 
-class PersonnelCostCreate(PermissionRequiredMixin, CreateView):
+class PersonnelCostCreate(PermissionRequiredMixin, CreateViewMenu):
     model = PersonnelCost
     fields = ['researcher', 'year', 'working_hours', 'cost']
     success_url = reverse_lazy('cost_view')
     permission_required = 'reporting.modify'
+    template_name = "UdyniManagement/generic_form.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Add new personnel cost"
+        context['title'] = "Add new personnel cost"
+        context['back_url'] = 'cost_view'
         return context
 
 
-class PersonnelCostUpdate(PermissionRequiredMixin, UpdateView):
+class PersonnelCostUpdate(PermissionRequiredMixin, UpdateViewMenu):
     model = PersonnelCost
     fields = ['year', 'working_hours', 'cost']
     success_url = reverse_lazy('cost_view')
     permission_required = 'reporting.modify'
+    template_name = "UdyniManagement/generic_form.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Modify personnel cost of " + str(context['personnelcost'].researcher)
+        context['title'] = "Modify personnel cost of " + str(context['personnelcost'].researcher)
+        context['back_url'] = 'cost_view'
         return context
 
 
-class PersonnelCostDelete(PermissionRequiredMixin, DeleteView):
+class PersonnelCostDelete(PermissionRequiredMixin, DeleteViewMenu):
     model = PersonnelCost
     success_url = reverse_lazy('cost_view')
     permission_required = 'reporting.modify'
+    template_name = "UdyniManagement/confirm_delete.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Delete personnel cost"
-        print_context(context)
+        context['title'] = "Delete personnel cost"
+        context['message'] = "Are you sure you want to delete the personnel cost for {0!s} for year {1!s}?".format(context["personnelcost"].researcher, context["personnelcost"].year)
+        context['back_url'] = 'cost_view'
         return context
 
 
@@ -283,7 +95,7 @@ class PersonnelCostDelete(PermissionRequiredMixin, DeleteView):
 # PRESENCES
 #
 
-class PresenceDataList(PermissionRequiredMixin, ListView):
+class PresenceDataList(PermissionRequiredMixin, ListViewMenu):
     model = PresenceData
     permission_required = 'reporting.read'
 
@@ -304,13 +116,13 @@ class PresenceDataList(PermissionRequiredMixin, ListView):
                     illness_leave=Count('code', filter=Q(code__ts_code=EpasCode.ILLNESS)),
                     missions=Count('code', filter=Q(code__ts_code=EpasCode.MISSION)),
                 )
-                .order_by()
+                .order_by('year')
             )
             return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Presences summary"
+        context['title'] = "Presences summary"
         # Extract researchers' IDs
         researchers_pks = []
         for q in context['object_list']:
@@ -320,7 +132,7 @@ class PresenceDataList(PermissionRequiredMixin, ListView):
         return context
 
 
-class PresenceDataDetail(PermissionRequiredMixin, ListView):
+class PresenceDataDetail(PermissionRequiredMixin, ListViewMenu):
     model = PresenceData
     context_object_name = 'presences'
     permission_required = 'reporting.read'
@@ -379,7 +191,7 @@ class PresenceDataDetail(PermissionRequiredMixin, ListView):
                     illness_leave=Count('code', filter=Q(code__ts_code=EpasCode.ILLNESS)),
                     missions=Count('code', filter=Q(code__ts_code=EpasCode.MISSION)),
                 )
-                .order_by()
+                .order_by('month')
             )
             cs = (
                 PresenceData.objects
@@ -401,10 +213,10 @@ class PresenceDataDetail(PermissionRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         r = Researcher.objects.get(pk=self.kwargs['researcher'])
         if 'month' in self.kwargs:
-            context['subtitle'] = "Presences for {0!s} - {1:s} {2:d}".format(r, tr_month.month_num2en(self.kwargs['month']), self.kwargs['year'])
+            context['title'] = "Presences for {0!s} - {1:s} {2:d}".format(r, tr_month.month_num2en(self.kwargs['month']), self.kwargs['year'])
             context['choices'] = EpasCode.CHOICES
         else:
-            context['subtitle'] = "Presences summary for {0!s} - {1:d}".format(r, self.kwargs['year'])
+            context['title'] = "Presences summary for {0!s} - {1:d}".format(r, self.kwargs['year'])
         return context
 
 
@@ -420,8 +232,9 @@ class PresenceDataImport(PermissionRequiredMixin, View):
         except KeyError:
             pass
         context = {
-            'subtitle': "Import presence data",
+            'title': "Import presence data",
             'form': PresenceInputForm(),
+            'menu': UdyniMenu().getMenu(request.user),
         }
         return render(request, 'FinancialReporting/presencedata_form.html', context)
 
@@ -435,15 +248,17 @@ class PresenceDataImport(PermissionRequiredMixin, View):
                                                                     form.cleaned_data['researcher'].name))
             request.session['presences'] = serialize_presences(presences)
             context = {
-                'subtitle': 'Confirm presence data for ' + str(form.cleaned_data['researcher']),
+                'title': 'Confirm presence data for ' + str(form.cleaned_data['researcher']),
                 'summary': summarize_presences(presences),
                 'researcher': form.cleaned_data['researcher'],
+                'menu': UdyniMenu().getMenu(request.user),
             }
             return render(request, 'FinancialReporting/presencedata_summary.html', context)
 
         context = {
-            'subtitle': "Import presence data",
+            'title': "Import presence data",
             'form': form,
+            'menu': UdyniMenu().getMenu(request.user),
         }
         return render(request, 'FinancialReporting/presencedata_form.html', context)
 
@@ -640,12 +455,13 @@ class PresenceDataExportTS(PermissionRequiredMixin, View):
 
         r = Researcher.objects.get(pk=rid)
         context = {
-            'subtitle': "Missions summary for {0!s} - Year: {1:d}".format(r, year),
+            'title': "Missions summary for {0!s} - Year: {1:d}".format(r, year),
             'total_hours': total_hours,
             'working_hours': working_hours,
             'missing_hours': missing_hours,
             'missions2report': math.ceil(missing_hours / 7.2),
             'data_by_month': data_by_month,
+            'menu': UdyniMenu().getMenu(request.user),
         }
         return render(request, 'FinancialReporting/presencedata_export2ts_missions.html', context)
 
@@ -755,14 +571,14 @@ class PresenceDataExportTS(PermissionRequiredMixin, View):
 # EPAS CODES
 #
 
-class EpasCodeList(PermissionRequiredMixin, ListView):
+class EpasCodeList(PermissionRequiredMixin, ListViewMenu):
     model = EpasCode
     paginate_by = 20
     permission_required = 'reporting.read'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "EPAS codes"
+        context['title'] = "EPAS codes"
         context['choices'] = EpasCode.CHOICES
         print(context['page_obj'])
         return context
@@ -775,8 +591,9 @@ class EpasCodeImport(PermissionRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         context = {
-            'subtitle': '',
+            'title': 'Import EPAS codes',
             'form': EpasCodeUpdateForm(),
+            'menu': UdyniMenu().getMenu(request.user),
         }
         return render(request, 'FinancialReporting/epascode_form.html', context)
 
@@ -800,9 +617,10 @@ class EpasCodeImport(PermissionRequiredMixin, View):
                         codes[code] = desc
             except Exception as e:
                 context = {
-                    'subtitle': '',
+                    'title': 'Import EPAS codes',
                     'form': form,
                     'error': str(e),
+                    'menu': UdyniMenu().getMenu(request.user),
                 }
                 return render(request, 'FinancialReporting/epascode_form.html', context)
 
@@ -819,8 +637,9 @@ class EpasCodeImport(PermissionRequiredMixin, View):
 
         else:
             context = {
-                'subtitle': '',
+                'title': 'Import EPAS codes',
                 'form': form,
+                'menu': UdyniMenu().getMenu(request.user),
             }
             return render(request, 'FinancialReporting/epascode_form.html', context)
 
@@ -849,7 +668,7 @@ class EpasCodeUpdate(PermissionRequiredMixin, View):
 # BANK HOLYDAYS
 #
 
-class BankHolidayList(PermissionRequiredMixin, ListView):
+class BankHolidayList(PermissionRequiredMixin, ListViewMenu):
     model = BankHoliday
     permission_required = 'reporting.read'
 
@@ -858,7 +677,7 @@ class BankHolidayList(PermissionRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Bank Holidays"
+        context['title'] = "Bank Holidays"
         for bh in context['object_list']:
             if bh.year == 0:
                 bh.date = "{0:s} {1:d}{2:s}".format(calendar.month_name[bh.month], bh.day, self.ordinaltg(bh.day))
@@ -867,38 +686,45 @@ class BankHolidayList(PermissionRequiredMixin, ListView):
         return context
 
 
-class BankHolidayCreate(PermissionRequiredMixin, CreateView):
+class BankHolidayCreate(PermissionRequiredMixin, CreateViewMenu):
     model = BankHoliday
     fields = ['name', 'year', 'month', 'day']
     success_url = reverse_lazy('bankholiday_view')
     permission_required = 'reporting.modify'
+    template_name = "UdyniManagement/generic_form.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Add new bank holiday"
+        context['title'] = "Add new bank holiday"
+        context['back_url'] = 'bankholiday_view'
         return context
 
 
-class BankHolidayUpdate(PermissionRequiredMixin, UpdateView):
+class BankHolidayUpdate(PermissionRequiredMixin, UpdateViewMenu):
     model = BankHoliday
     fields = ['name', 'year', 'month', 'day']
     success_url = reverse_lazy('bankholiday_view')
     permission_required = 'reporting.modify'
+    template_name = "UdyniManagement/generic_form.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Modify bank holiday"
+        context['title'] = "Modify bank holiday"
+        context['back_url'] = 'bankholiday_view'
         return context
 
 
-class BankHolidayDelete(PermissionRequiredMixin, DeleteView):
+class BankHolidayDelete(PermissionRequiredMixin, DeleteViewMenu):
     model = BankHoliday
     success_url = reverse_lazy('bankholiday_view')
     permission_required = 'reporting.modify'
+    template_name = "UdyniManagement/confirm_delete.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Delete bank holiday"
+        context['title'] = "Delete bank holiday"
+        context['message'] = "Are you sure you want to delete the bank holiday: {0!s}?".format(context['bankholiday'])
+        context['back_url'] = 'bankholiday_view'
         return context
 
 
@@ -906,29 +732,53 @@ class BankHolidayDelete(PermissionRequiredMixin, DeleteView):
 # REPORTING
 #
 
-class ReportingList(PermissionRequiredMixin, ListView):
+class ReportingList(PermissionRequiredMixin, ListViewMenu):
     model = Reporting
     permission_required = 'reporting.read'
 
     def get_queryset(self):
         qs = (
-            Reporting.objects
+            Reporting.objects.all()
             .annotate(
                 res_name=Concat(F('researcher__name'), Value(' '), F('researcher__surname')),
                 res_cost=F('hours') * F('cost__cost') / F('cost__working_hours'),
             )
-            .order_by('researcher', 'project', 'wp', 'rp_start')
+            .order_by('researcher', 'project', 'rp_start', 'wp')
         )
         return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['title'] = "Reporting"
 
-        # Resort object_data
+        periods = {}
 
+        for obj in context['object_list']:
+            # Researcher name
+            name = str(obj.res_name)
+            if name not in periods:
+                periods[name] ={}
+            # Project name
+            project = str(obj.project.name)
+            if project not in periods[name]:
+                periods[name][project] = {'rowspan': 0, 'periods': {}}
+            # Reporting period
+            start = obj.rp_start.isoformat()
+            if start not in periods[name][project]['periods']:
+                periods[name][project]['periods'][start] = {'rowspan': 0, 'start': obj.rp_start, 'end': obj.rp_end}
+            # Workpackages
+            if obj.wp is not None:
+                if 'wps' not in periods[name][project]['periods'][start]:
+                    periods[name][project]['periods'][start]['wps'] = {}
+                periods[name][project]['periods'][start]['wps'][obj.wp.name] = {'pk': obj.pk, 'hours': obj.hours, 'cost': obj.res_cost}
+            else:
+                periods[name][project]['periods'][start].update({'pk': obj.pk, 'hours': obj.hours, 'cost': obj.res_cost})
 
+            periods[name][project]['rowspan'] += 1
+            periods[name][project]['periods'][start]['rowspan'] += 1
 
-        context['subtitle'] = "Reporting"
+        context['periods'] = periods
+
         return context
 
 
@@ -939,10 +789,11 @@ class ReportingCreate(PermissionRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         context = {
-            'subtitle': "Add new reporting period",
+            'title': "Add new reporting period",
             'form': ReportingAddForm(),
+            'menu': UdyniMenu().getMenu(request.user),
         }
-        return render(request, 'FinancialReporting/reporting_form.html', context)
+        return render(request, 'FinancialReporting/reporting_add.html', context)
 
     def post(self, request, *args, **kwargs):
         form = ReportingAddForm(request.POST)
@@ -961,6 +812,7 @@ class ReportingCreate(PermissionRequiredMixin, View):
                 if m is not None:
                     n = int(m.groups()[0])
                     h = float(form.cleaned_data["hours_input_{0:d}".format(n)])
+                    hm = bool(form.cleaned_data["has_missions_{0:d}".format(n)])
                     # We have a wp
                     obj = Reporting(
                         project=project,
@@ -969,53 +821,69 @@ class ReportingCreate(PermissionRequiredMixin, View):
                         hours=h,
                         wp=v,
                         rp_start=start,
-                        rp_end=end)
+                        rp_end=end,
+                        has_missions=hm)
                     obj.save()
                     inserted_any = True
 
             if not inserted_any:
                 # No WP specified. Get number of hours from WP1
                 h = float(form.cleaned_data["hours_input_1"])
+                hm = bool(form.cleaned_data["has_missions_1"])
                 obj = Reporting(
                     project=project,
                     researcher=researcher,
                     cost=cost,
                     hours=h,
                     rp_start=start,
-                    rp_end=end)
+                    rp_end=end,
+                    has_missions=hm)
                 obj.save()
 
             return redirect('reporting_view')
 
         else:
             context = {
-                'subtitle': "Add new reporting period",
+                'title': "Add new reporting period",
                 'form': form,
+                'menu': UdyniMenu().getMenu(request.user),
             }
-            return render(request, 'FinancialReporting/reporting_form.html', context)
+            return render(request, 'FinancialReporting/reporting_add.html', context)
 
 
-class ReportingUpdate(PermissionRequiredMixin, UpdateView):
+class ReportingUpdate(PermissionRequiredMixin, UpdateViewMenu):
     model = Reporting
     fields = ['hours', 'cost', 'has_missions']
     success_url = reverse_lazy('reporting_view')
-    template_name_suffix = '_update_form'
     permission_required = 'reporting.modify'
+    template_name = "UdyniManagement/generic_form.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Editing reporting period "
+        context['title'] = "Editing reporting period "
+        context['back_url'] = 'reporting_view'
         return context
 
 
-class ReportingDelete(PermissionRequiredMixin, DeleteView):
+class ReportingDelete(PermissionRequiredMixin, DeleteViewMenu):
     model = Reporting
     success_url = reverse_lazy('reporting_view')
     permission_required = 'reporting.modify'
+    template_name = "UdyniManagement/confirm_delete.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['subtitle'] = "Delete personnel cost"
+        context['title'] = "Delete personnel cost"
+        values = [
+                context['reporting'].rp_start,
+                context['reporting'].rp_end,
+                context['reporting'].researcher,
+                context['reporting'].project.name,
+                " (WP: {0!s})".format(context['reporting'].wp.name) if context['reporting'].wp else "",
+        ]
+        context['message'] = "Are you sure you want to delete the reporting period from {0!s} to {1!s} for {2!s} on the project {3!s}{4!s}?".format(*values)
+        context['back_url'] = 'reporting_view'
+        print(context)
         return context
 
 
@@ -1058,8 +926,6 @@ class ReportingUpdateCosts(PermissionRequiredMixin, View):
 # =============================================
 # TIMESHEETS
 #
-
-
 class TimeSheetsView(PermissionRequiredMixin, View):
     """ List a summary of all the available timesheets / reporting periods
         and status of the generation
@@ -1129,7 +995,6 @@ class TimeSheetsView(PermissionRequiredMixin, View):
                         .filter(reporting_period=p, year=y)
                         .aggregate(
                             n=Count('hours'),
-                            h=Sum('hours'),
                         )
                     )
                     if hints['n'] != 12:
@@ -1139,18 +1004,16 @@ class TimeSheetsView(PermissionRequiredMixin, View):
                 # Check if timesheets are generated
                 r_data[y]['ts'] = 0
                 for m in range(1, 13, 1):
-                    try:
-                        LoadTimesheetData(r.pk, y, m)
+                    if CheckTimesheetData(r.pk, y, m):
                         r_data[y]['ts'] += 1
-                    except Exception as e:
-                        print("TS for {0!s} not available for month {1:d}/{2:d} (Error: {3!s})".format(r, m, y, e))
 
             if len(r_data):
                 data.append({'researcher': r, 'data': r_data})
 
         context = {
-            'subtitle': "Generate timesheets",
+            'title': "Generate timesheets",
             'researchers': data,
+            'menu': UdyniMenu().getMenu(request.user),
         }
         return render(request, 'FinancialReporting/timesheet_view.html', context)
 
@@ -1180,10 +1043,11 @@ class TimeSheetsGenerate(PermissionRequiredMixin, View):
 
         researcher = Researcher.objects.get(pk=self.kwargs['researcher'])
         context = {
-            'subtitle': "Timesheets generation for {0!s} for year {1:d}".format(researcher, self.kwargs['year']),
+            'title': "Timesheets generation for {0!s} for year {1:d}".format(researcher, self.kwargs['year']),
             'rid': self.kwargs['researcher'],
             'year': self.kwargs['year'],
             'months': list(range(1, 13, 1)),
+            'menu': UdyniMenu().getMenu(request.user),
         }
         return render(request, 'FinancialReporting/timesheet_generate.html', context)
 
@@ -1204,7 +1068,7 @@ class TimeSheetsGenerateHints(PermissionRequiredMixin, View):
         y = self.kwargs['year']
         r = self.kwargs['researcher']
 
-        # Get all reporting periods registered in the year
+        # Get all reporting periods registered in the year with missions
         periods = (
             Reporting.objects
             .filter(
@@ -1220,11 +1084,13 @@ class TimeSheetsGenerateHints(PermissionRequiredMixin, View):
             context = self.__render_mission_table(r, y)
             if 'error_message' in kwargs:
                 context['error_message'] = kwargs['error_message']
+            context['menu'] = UdyniMenu().getMenu(request.user)
             return render(request, 'FinancialReporting/timesheet_hints_missions.html', context)
 
         else:
             # No missions to report
             context = self.__render_hours_hint_table(r, y)
+            context['menu'] = UdyniMenu().getMenu(request.user)
             return render(request, 'FinancialReporting/timesheet_hints.html', context)
 
 
@@ -1292,6 +1158,7 @@ class TimeSheetsGenerateHints(PermissionRequiredMixin, View):
                     hint.save()
 
         context = self.__render_hours_hint_table(r, y, missions)
+        context['menu'] = UdyniMenu().getMenu(request.user)
         return render(request, 'FinancialReporting/timesheet_hints.html', context)
 
     def __render_mission_table(self, rid, year):
@@ -1348,7 +1215,7 @@ class TimeSheetsGenerateHints(PermissionRequiredMixin, View):
             data[k] = sorted(v.items())
 
         context = {
-            'subtitle': "Timesheet mission hints for {0!s} for year {1:d}".format(Researcher.objects.get(pk=rid), year),
+            'title': "Timesheet mission hints for {0!s} for year {1:d}".format(Researcher.objects.get(pk=rid), year),
             'year': year,
             'rid': rid,
             'data': sorted(data.items()),   # Sort months
@@ -1364,7 +1231,7 @@ class TimeSheetsGenerateHints(PermissionRequiredMixin, View):
         # to the total working hours.
 
         context = {
-            'subtitle': "Timesheet hints for {0!s} for year {1:d}".format(Researcher.objects.get(pk=rid), year),
+            'title': "Timesheet hints for {0!s} for year {1:d}".format(Researcher.objects.get(pk=rid), year),
             'year': year,
             'rid': rid,
         }
@@ -1377,7 +1244,7 @@ class TimeSheetsGenerateHints(PermissionRequiredMixin, View):
                 Q(rp_start__lte=datetime.date(year, 12, 31)) &   # Start day before or on Dec. 31st
                 Q(rp_end__gte=datetime.date(year, 1, 1))         # End day after or on Jan. 1st
             )
-            .order_by()
+            .order_by('project', 'wp', 'rp_start')
         )
 
         # List of periods of interest
@@ -1441,8 +1308,29 @@ class TimeSheetsGenerateHints(PermissionRequiredMixin, View):
                         working_days=Count('ts_hours'),
                     )
                 )
-                working_days[13]['working_days'] = q['working_days']
-                working_days[13]['tot_hours'] = q['tot_hours']
+                # If for the following year the TS hours were not assesed already
+                # use the raw presence hours, so that hours can be shared on the
+                # next year
+                if q['tot_hours'] is None:
+                    q_filter = (
+                        Q(researcher=rid) &
+                        Q(day__gt=m_end) &
+                        Q(day__lte=p.rp_end) &
+                        Q(hours__gt=0) &
+                        (Q(code=None) | Q(code__ts_code=EpasCode.NONE))
+                    )
+                    q = (
+                        PresenceData.objects
+                        .filter(q_filter)
+                        .aggregate(
+                            tot_hours=Sum('hours'),
+                            working_days=Count('hours'),
+                        )
+                    )
+                    if q['tot_hours'] is not None:
+                        q['tot_hours'] = round(q['tot_hours'] * 2) / 2
+                working_days[13]['working_days'] = q['working_days'] if q['working_days'] is not None else 0
+                working_days[13]['tot_hours'] = q['tot_hours'] if q['tot_hours'] is not None else 0
             else:
                 m_end = p.rp_end
 
@@ -1524,40 +1412,51 @@ class TimeSheetsGenerateHints(PermissionRequiredMixin, View):
 
             print("Before:", working_days[0]['working_days'], "After:", working_days[13]['working_days'], "Total:", total_working_days)
 
-            # Calculate percentage to report for each month
-            fractions = [0 for i in range(14)]
-            for m in range(14):
-                try:
-                    fractions[m] = working_days[m]['working_days'] / total_working_days
-                except Exception:
-                    fractions[m] = 0.0
-
             # Get previously saved hints
             hints = TimesheetHint.objects.filter(reporting_period=p, year=year)
             hints_p = TimesheetHint.objects.aggregate(h=Sum('hours', filter=Q(reporting_period=p) & Q(year__lt=year)))
             hints_n = TimesheetHint.objects.aggregate(h=Sum('hours', filter=Q(reporting_period=p) & Q(year__gt=year)))
-            # Cycle over months and set hours by hint if present or by estimation
-            # NB: estimation are negative because they are rounded by __check_period_hours
+            # Cycle over months and set hours by hint if present. Hints must have precedence. Month/periods without hint
+            # will get an estimate based on the number of hours not allocated
+            allocated_hours = 0  # Hours allocated by hint
+            tot_days_nam = 0     # Total working days in months without hints
             for m in range(14):
                 if m == 0:
                     if hints_p['h'] is not None:
                         info['bymonth'][0] = hints_p['h']
+                        allocated_hours += hints_p['h']
                     else:
-                        info['bymonth'][0] = -act_hours * fractions[0]
+                        info['bymonth'][0] = None
+                        tot_days_nam += working_days[0]['working_days']
                 elif m == 13:
                     if hints_n['h'] is not None:
                         info['bymonth'][13] = hints_n['h']
+                        allocated_hours += hints_n['h']
                     else:
-                        info['bymonth'][13] = -act_hours * fractions[13]
+                        info['bymonth'][13] = None
+                        tot_days_nam += working_days[13]['working_days']
                 else:
                     if hints:
                         for h in hints:
                             if h.month == m:
                                 info['bymonth'][m] = h.hours
+                                allocated_hours += h.hours
                                 break
                     else:
-                        info['bymonth'][m] = -act_hours * fractions[m]
+                        info['bymonth'][m] = None
+                        tot_days_nam += working_days[m]['working_days']
+                # Set available hours
                 info['ava_hours'][m] = working_days[m]['tot_hours']
+
+            # Hours not allocated
+            res_hours = act_hours - allocated_hours
+
+            for m in range(14):
+                if info['bymonth'][m] is None:
+                    if working_days[m]['working_days']:
+                        info['bymonth'][m] = -res_hours * (working_days[m]['working_days'] / tot_days_nam)
+                    else:
+                        info['bymonth'][m] = 0.0
 
             # Round guesses and check that the total matches the total hours for the period
             info['bymonth'] = self.__check_period_hours(info['bymonth'], act_hours)
@@ -1659,6 +1558,8 @@ class TimeSheetsGenerateHints(PermissionRequiredMixin, View):
         # Difference between total hours and guess
         delta = total - sum(by_m_h)
 
+        print(delta)
+
         if delta > 0:
             # Adjustment needed. Missing hours
             d_f, d_w = math.modf(delta)
@@ -1703,9 +1604,9 @@ class TimeSheetsGenerateHints(PermissionRequiredMixin, View):
         return by_m_h
 
 
-class TimeSheetsPrintSummary(PermissionRequiredMixin, View):
+class TimeSheetsPrint(PermissionRequiredMixin, View):
 
-    http_method_names = ['get', ]
+    http_method_names = ['get', 'post']
     permission_required = 'reporting.read'
 
     def get(self, request, *args, **kwargs):
@@ -1717,51 +1618,105 @@ class TimeSheetsPrintSummary(PermissionRequiredMixin, View):
         # Check which months are available
         good_months = []
         for m in range(1, 13, 1):
-            try:
-                LoadTimesheetData(rid, year, m)
+            if CheckTimesheetData(rid, year, m):
                 good_months.append(m)
-            except Exception as e:
-                print("Month {0:d} failed with error: {1!s}".format(m, e))
 
         researcher = Researcher.objects.get(pk=rid)
         context = {
-            'subtitle': "Print timesheets for {0!s} for year {1:d}".format(researcher, year),
+            'title': "Print timesheets for {0!s} for year {1:d}".format(researcher, year),
             'months': good_months,
             'year': year,
             'rid': rid,
+            'menu': UdyniMenu().getMenu(request.user),
         }
         return render(request, 'FinancialReporting/timesheet_printsummary.html', context)
 
-
-class TimeSheetsPrint(PermissionRequiredMixin, View):
-    """ Show a timesheet to print
-        Return a 404 not found if hints and saved data are not consistent
-    """
-
-    http_method_names = ['get', ]
-    permission_required = 'reporting.read'
-
-    def get(self, request, *args, **kwargs):
-        # Save the modified year situation as TimesheetHints (if some hints are alread
-        # available they're updated)
+    def post(self, request, *args, **kwargs):
         year = self.kwargs['year']
-        month = self.kwargs['month']
         rid = self.kwargs['researcher']
 
+        months = []
+        for k, v in request.POST.items():
+            m = re.match('^m_(\d+)$', k)
+            if m is not None:
+                months.append(int(m.groups()[0]))
+        months = sorted(months)
+
+
         try:
-            researcher = Researcher.objects.get(pk=rid)
-            context = {
-                'subtitle': "Timesheets for {0!s} for year {1:d}".format(researcher, year),
-                'month': month,
-                'year': year,
-                'researcher': "{0:s} {1:s}".format(researcher.name, researcher.surname),
-                'employment': "{0:s}".format(researcher.get_role_display()),
-                'beneficiary': "CNR-IFN",
-                'ts': LoadTimesheetData(rid, year, month)
-            }
-            return render(request, 'FinancialReporting/timesheet_print.html', context)
+            context = []
+            for month in months:
+                print("Processing month", month)
+
+                # Get number of days in month
+                ndays = calendar.monthrange(year, month)[1]
+
+                # Get role from ResearcherRole table
+                current_role = None
+                roles = ResearcherRole.objects.filter(researcher=rid).order_by('start_date')
+                for role in roles:
+                    # TODO: check criteria to switch to another role based on date
+                    if role.start_date <= datetime.date(year, month, 1):
+                        current_role = role.get_role_display()
+                    else:
+                        break
+                # Default to researcher if nothing is set in ResearcherRole
+                if current_role is None:
+                    current_role = "Researcher"
+
+                # Get researcher
+                researcher = Researcher.objects.get(pk=rid)
+                # Load timesheet data
+                ts_data = LoadTimesheetData(rid, year, month)
+                # Director
+                q = (
+                    ResearcherRole.objects
+                    .filter(role=ResearcherRole.INSTITUTE_DIRECTOR)
+                    .filter(start_date__lt=datetime.date(year, month, ndays))
+                    .order_by('-start_date')
+                    .first()
+                    .researcher
+                )
+                director = "{0!s} (IFN Director)".format(q)
+
+                # Check needed signatures
+                signatures = {}
+                for project in ts_data['projects']:
+                    if 'pi_id' in project:
+                        if project['pi_id'] == researcher or project['pi_id'] is None:
+                            # director
+                            name = str(director)
+                            if name not in signatures:
+                                signatures[name] = []
+                            signatures[name].append(project['name'])
+                        else:
+                            name = str(project['pi_id'])
+                            if name not in signatures:
+                                signatures[name] = []
+                            signatures[name].append(project['name'])
+
+                for k, v in signatures.items():
+                    signatures[k] = ", ".join(sorted(v))
+
+                context.append({
+                    'title': "Timesheets for {0!s} for year {1:d}".format(researcher, year),
+                    'month': month,
+                    'year': year,
+                    'researcher': "{0:s} {1:s}".format(researcher.name, researcher.surname),
+                    'employment': current_role,
+                    'beneficiary': "CNR-IFN",
+                    'ts': ts_data,
+                    'signatures': signatures,
+                })
+
+            print(len(context))
+
+            return FileResponse(PrintPFDTimesheet(context), as_attachment=True, filename='{0:s}_{1:04d}.pdf'.format(researcher.surname.lower(), year));
+            # return FileResponse(PrintPFDTimesheet(context), as_attachment=False, filename='{0:s}_{1:04d}.pdf'.format(researcher.surname.lower(), year));
 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             raise Http404(str(e))
 
 
@@ -1795,14 +1750,14 @@ class TimeSheetsAjaxGenerate(PermissionRequiredMixin, View):
         for p in periods:
             # First check that all the hints for the period are consistent
             if not self.checkHintsConsistency(p, year):
-                return JsonResponse({'generated': False, 'error': 'no-hint', 'message': 'Hints for reporting period {0!s} ({1!s}) are not consistent'.format(p.project.name, p.wp.name if p.wp else 'None')})
+                return JsonResponse({'generated': False, 'error': 'no-hint', 'message': 'Hints for month {0:d}/{1:d} for project {2!s} ({3!s}) are not consistent'.format(month, year, p.project.name, p.wp.name if p.wp else 'None')})
 
             # Get hint for the period
             try:
                 hints[p.pk] = TimesheetHint.objects.get(reporting_period=p, year=year, month=month)
             except TimesheetHint.DoesNotExist:
                 # If we are missing a hint for a period we cannot proceed
-                return JsonResponse({'generated': False, 'error': 'no-hint', 'message': 'No hint found for reporting period {0!s} ({1!s})'.format(p.project.name, p.wp.name if p.wp else 'None')})
+                return JsonResponse({'generated': False, 'error': 'no-hint', 'message': 'No hint found for month {0:d}/{1:d} for project {2!s} ({3!s})'.format(month, year, p.project.name, p.wp.name if p.wp else 'None')})
         try:
             data = {
                 'generated': True,

@@ -5,11 +5,12 @@ import datetime
 import calendar
 import random
 
-from .templatetags.tr_month import month_num2it
+from Tags.templatetags.tr_month import month_num2it
 
-from django.db.models import Q
+from django.db.models import Q, F
+from django.db.models import Sum, Subquery, OuterRef
 from .models import BankHoliday, PresenceData, Reporting, TimesheetHint, TimesheetMissionHint, EpasCode, TimesheetHours
-from django.db.models.functions import ExtractYear, ExtractMonth
+from django.db.models.functions import ExtractYear, ExtractMonth, Coalesce
 
 
 def process_presences(xls, researcher):
@@ -159,18 +160,6 @@ def unserialize_presences(json):
     return out
 
 
-def print_context(context, indent=0):
-    for k, v in context.items():
-        s = "".join([" " for i in range(indent)])
-        s += "{0!s}: ".format(k)
-        if type(v) is dict:
-            print(s)
-            print_context(v, indent + 2)
-        else:
-            s += str(v)
-            print(s)
-
-
 def check_presences_unique(presences):
     dates = []
     print("CHECK for duplicates!")
@@ -251,7 +240,7 @@ def GenerateTimesheetData(rid, year, month):
         else:
             if data['absence_code'][d - 1]['a'] != 'PH':
                 if p.ts_code == EpasCode.MISSION:
-                    data['absence_code'][d - 1]['a'] = 'MI'
+                    data['absence_code'][d - 1]['a'] = 'BT'
                 elif p.ts_code == EpasCode.HOLIDAYS:
                     data['absence_code'][d - 1]['a'] = 'AH'
                 elif p.ts_code == EpasCode.OTHER:
@@ -663,7 +652,7 @@ def LoadTimesheetData(rid, year, month):
         else:
             if data['absence_code'][d - 1]['a'] != 'PH':
                 if p.ts_code == EpasCode.MISSION:
-                    data['absence_code'][d - 1]['a'] = 'MI'
+                    data['absence_code'][d - 1]['a'] = 'BT'
                 elif p.ts_code == EpasCode.HOLIDAYS:
                     data['absence_code'][d - 1]['a'] = 'AH'
                 elif p.ts_code == EpasCode.OTHER:
@@ -677,7 +666,7 @@ def LoadTimesheetData(rid, year, month):
             Q(rp_start__lte=datetime.date(year, month, ndays)) &
             Q(rp_end__gte=datetime.date(year, month, 1))
         )
-        .order_by()
+        .order_by('project__name', 'wp__name')
     )
 
     # Group all reporting periods by project
@@ -712,6 +701,8 @@ def LoadTimesheetData(rid, year, month):
             # Project name and reference
             new_p['name'] = p['wps'][0].project.name
             new_p['ref'] = p['wps'][0].project.reference
+            # PI ID
+            new_p['pi_id'] = p['wps'][0].project.pi
             # Cycle over work packages
             new_p['wps'] = []
             for wp in p['wps']:
@@ -770,6 +761,8 @@ def LoadTimesheetData(rid, year, month):
             new_p['has_wps'] = False
             # Project name
             new_p['name'] = p['period'][0].project.name
+            # PI
+            new_p['pi_id'] = p['period'][0].project.pi
             # Project reference
             new_p['ref'] = p['period'][0].project.reference
             new_p['id'] = p['period'][0].pk
@@ -856,8 +849,8 @@ def LoadTimesheetData(rid, year, month):
         .filter(
             Q(researcher=rid) &
             Q(day__gt=datetime.date(year, month, ndays)) &
-            Q(ts_code=EpasCode.NONE) &
-            Q(ts_hours__gt=0)
+            (Q(code=None) | Q(code__ts_code=EpasCode.NONE)) &
+            Q(hours__gt=0)
         )
         .order_by('day')
         .first()
@@ -927,3 +920,80 @@ def LoadHoursOverDays(period, year, month, available_hours):
         out[d - 1]['mission'] = True
 
     return out
+
+
+def CheckTimesheetData(rid, year, month):
+    print("Checking timesheets data for {0:d}/{1:d}".format(month, year))
+
+    # Number of days in month
+    ndays = calendar.monthrange(year, month)[1]
+
+    # Get all reporting periods for the current researcher in the month
+    rps = (
+        Reporting.objects
+        .filter(
+            Q(researcher=rid) &
+            Q(rp_start__lte=datetime.date(year, month, ndays)) &
+            Q(rp_end__gte=datetime.date(year, month, 1))
+        )
+        .order_by()
+    )
+
+    # For each period check that we have a hint, and that the hint hours corresponds to Timesheet hours
+    for period in rps:
+
+        # Check hints
+        try:
+            hint = TimesheetHint.objects.get(reporting_period=period.pk, year=year, month=month)
+            hours = hint.hours
+        except TimesheetHint.DoesNotExist:
+            print("Error: No hints")
+            return False
+
+        ts_hours = (
+            TimesheetHours.objects
+            .filter(reporting_period=period.pk)
+            .annotate(year=ExtractYear('day'), month=ExtractMonth('day'))
+            .filter(year=year, month=month)
+            .aggregate(ts_hours=Coalesce(Sum('hours'), 0.0))
+        )
+        ts_hours = ts_hours['ts_hours']
+
+        # Sum reported missions
+        # ms_hours = (
+        #     TimesheetMissionHint.objects
+        #     .filter(reporting_period=period.pk)
+        #     .annotate(year=ExtractYear('missionday__day'), month=ExtractMonth('missionday__day'))
+        #     .filter(year=year, month=month)
+        #     .aggregate(mission_h=Coalesce(Sum('missionday__hours'), 0.0))
+        # )['mission_h']
+
+        if ts_hours != hours:
+            print("Error: No ts hours or hints does not match")
+            return False
+
+    # Check that reported hours per day does not exceed TS hours per day
+    q = (
+        TimesheetHours.objects
+        .filter(reporting_period__researcher=14)
+        .annotate(year=ExtractYear('day'), month=ExtractMonth('day'))
+        .filter(year=year, month=month)
+        .values('day')
+        .annotate(rep_h=Sum('hours'))
+        .annotate(
+            tot_h=Subquery(
+                PresenceData.objects
+                .filter(researcher=14, day=OuterRef('day'))
+                .values('ts_hours')[:1]
+            )
+        )
+        .filter(rep_h__gt=F('tot_h'))
+        .order_by('day')
+    )
+
+    if len(q):
+        print("Error: reported does not match worked hours")
+        return False
+
+    # All tests passed
+    return True

@@ -1,61 +1,70 @@
 {% load static %}
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
-"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Projects Financial Reporting{% if subtitle %} - {{ subtitle }}{% endif %}</title>
-  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-  <link rel="stylesheet" href="{% static 'css/bootstrap-theme.min.css' %}">
-  <link rel="stylesheet" href="{% static 'css/navbar-fixed-side.css' %}">
-  <link rel="stylesheet" href="{% static 'css/jquery-ui.min.css' %}">
-  <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}" media="all" />
-  <link rel="shortcut icon" type="image/png" href="{% static 'accounting.png' %}"/>
-  <script type="text/javascript" src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
-  <script type="text/javascript" src="{% static 'js/jquery-ui.min.js' %}"></script>
-  <script type="text/javascript" src="{% static 'js/bootstrap.min.js' %}"></script>
-  <script type="text/javascript" src="{% static 'js/js.cookie.min.js' %}"></script>
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="UDynI Management Intranet">
+  <meta name="author" content="Michele Devetta">
+
+  <title>{{ title }}</title>
+
+  <!-- Fontawesome v6 -->
+  <link href="{% static 'css/fa-all.min.css' %}" rel="stylesheet" type="text/css">
+
+  <!-- Nunito Sans -->
+  <link
+      href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+      rel="stylesheet">
+
+  <!-- Style from SB-Admin 2: https://startbootstrap.com/theme/sb-admin-2 -->
+  <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+
+  <!-- JQuery UI -->
+  <link href="{% static 'css/jquery-ui-1.13.1.min.css' %}" rel="stylesheet">
+
+  <!-- Select2 (https://select2.org/) -->
+  <link href="{% static 'css/select2-4.0.13.min.css' %}" rel="stylesheet">
+
+  <!-- Custom styles -->
+  <link href="{% static 'css/udyni.css' %}" rel="stylesheet">
+
+  <link rel="shortcut icon" type="image/png" href="{% static 'img/accounting.png' %}"/>
+
 </head>
-<body>
 
-<div class="container-fluid">
-  <header class="navbar navbar-default navbar-fixed-top">
-    <h1><img src="{% static 'logo.png' %}" alt="Udyni" width="75" height="75" />Project reporting</h1>
-  </header>
-  <div class="row">
-    <div class="col-sm-3 col-lg-2">
-      <nav class="navbar navbar-default navbar-fixed-side">{# https://samrayner.com/bootstrap-side-navbar/ #}
-        <div class="container">
-          <div class="navbar-header">
-            <button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse">
-              <span class="sr-only">Toggle navigation</span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-            </button>
-            <!-- TODO add logo -->
-          </div>
-          <div class="collapse navbar-collapse">
+<body id="page-top">
 
-          </div>
-        </div>
-      </nav>
-    </div> <!-- .col -->
-    <div class="col-sm-9 col-lg-10">
-      <div id="content">
-        <h3 class="subtitle">{{ subtitle }}</h3>
-        {% if error %}
-          <div class="alert alert-danger" role="alert">{{error}}</div>
-        {% endif %}
-        {% block content %}
+  {% block page %}
 
-        {% endblock %}
-        <div class="text-center">
-          <a href="https://www.djangoproject.com/" title="Django! Whee!"><img src="{% static 'django.png' %}" width="160" height="38" alt="Django powered"></a>
-        </div>
-      </div>
-    </div> <!-- .col -->
-  </div> <!-- .row -->
-</div> <!-- .container -->
+  {% endblock %}
+
+  <!-- Bootstrap core JavaScript-->
+  <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+  <!-- Core plugin JavaScript-->
+  <script src="{% static 'js/jquery.easing.min.js' %}"></script>
+  <script src="{% static 'js/jquery-ui-1.13.1.min.js' %}"></script>
+  <script src="{% static 'js/js.cookie.min.js' %}"></script>
+
+  <!-- Custom scripts for all pages-->
+  <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
+
+  <!-- Menu script -->
+  <script src="{% static 'js/udyni-menu.js' %}"></script>
+
+  <!-- Select2 (https://select2.org/) -->
+  <script src="{% static 'js/select2-4.0.13.full.min.js' %}"></script>
+
+  <!-- Page inline scripts -->
+  {% block page-javascript %}
+
+
+  {% endblock %}
+
 </body>
 </html>

@@ -1,29 +1,11 @@
 from django.urls import path, reverse_lazy
 from django.views.generic.base import RedirectView
+from UdyniManagement.views import EmptyView
 
 from . import views
 
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('researchers/', views.ResearcherList.as_view(), name='researcher_view'),
-    path('researchers/add', views.ResearcherCreate.as_view(), name='researcher_add'),
-    path('researchers/<int:pk>/modify', views.ResearcherUpdate.as_view(), name='researcher_mod'),
-    path('researchers/<int:pk>/delete', views.ResearcherDelete.as_view(), name='researcher_del'),
-    path('researchers/<int:researcher>/role', RedirectView.as_view(url=reverse_lazy('researcher_view'), permanent=False), name='researcher_role_view'),
-    path('researchers/<int:researcher>/role/add', views.ResearcherRoleCreate.as_view(), name='researcher_role_add'),
-    path('researchers/<int:researcher>/role/<int:pk>/modify', views.ResearcherRoleUpdate.as_view(), name='researcher_role_mod'),
-    path('researchers/<int:researcher>/role/<int:pk>/delete', views.ResearcherRoleDelete.as_view(), name='researcher_role_del'),
-
-    path('projects/', views.ProjectList.as_view(), name='project_view'),
-    path('projects/add', views.ProjectCreate.as_view(), name='project_add'),
-    path('projects/<int:pk>/modify', views.ProjectUpdate.as_view(), name='project_mod'),
-    path('projects/<int:pk>/delete', views.ProjectDelete.as_view(), name='project_del'),
-
-    path('workpackages/', RedirectView.as_view(url=reverse_lazy('project_view'), permanent=False), name='wp_view'),
-    path('workpackages/add', RedirectView.as_view(url=reverse_lazy('project_view'), permanent=False), name='wp_add'),
-    path('workpackages/add/<int:project>', views.WorkPackageCreate.as_view(), name='wp_add_prj'),
-    path('workpackages/<int:pk>/modify', views.WorkPackageUpdate.as_view(), name='wp_mod'),
-    path('workpackages/<int:pk>/delete', views.WorkPackageDelete.as_view(), name='wp_del'),
+    path('', EmptyView.as_view(), name='reporting_index'),
 
     path('costs/', views.PersonnelCostList.as_view(), name='cost_view'),
     path('costs/add', views.PersonnelCostCreate.as_view(), name='cost_add'),
@@ -60,11 +42,54 @@ urlpatterns = [
     path('timesheets/<int:researcher>/<int:year>/list', views.TimeSheetsList.as_view(), name='timesheets_list'),
     path('timesheets/<int:researcher>/<int:year>/generate', views.TimeSheetsGenerate.as_view(), name='timesheets_generate'),
     path('timesheets/<int:researcher>/<int:year>/hints', views.TimeSheetsGenerateHints.as_view(), name='timesheets_generatehints'),
-    path('timesheets/<int:researcher>/<int:year>/print', views.TimeSheetsPrintSummary.as_view(), name='timesheets_print_summary'),
-    path('timesheets/<int:researcher>/<int:year>/print/<int:month>', views.TimeSheetsPrint.as_view(), name='timesheets_print'),
+    path('timesheets/<int:researcher>/<int:year>/print', views.TimeSheetsPrint.as_view(), name='timesheets_print'),
 
     path('timesheets/ajax/<int:researcher>/<int:year>/generate', views.TimesheetAjaxDenied.as_view(), name='timesheets_ajax_generate_base'),
     path('timesheets/ajax/<int:researcher>/<int:year>/generate/<int:month>', views.TimeSheetsAjaxGenerate.as_view(), name='timesheets_ajax_generate'),
     path('timesheets/ajax/<int:researcher>/<int:year>/view/<int:month>', views.TimeSheetsAjaxView.as_view(), name='timesheets_ajax_view'),
     path('timesheets/ajax/<int:researcher>/<int:year>/hints', views.TimeSheetsAjaxSaveHints.as_view(), name="timesheets_ajax_savehints"),
 ]
+
+menu = {
+    'name': 'Reporting',
+    'link': reverse_lazy('reporting_index'),
+    'icon': 'fa-file-invoice-dollar',
+    'subsections': [
+        {
+            'name': 'Personnel costs',
+            'link': reverse_lazy('cost_view'),
+            'permissions': [],
+        },
+        {
+            'name': 'Presences',
+            'link': reverse_lazy('presencedata_view'),
+            'permissions': [],
+        },
+        {
+            'name': 'Expenses reporting',
+            'link': '', #reverse_lazy(''),
+            'permissions': [],
+        },
+        {
+            'name': 'Personnel reporting',
+            'link': reverse_lazy('reporting_view'),
+            'permissions': [],
+        },
+        {
+            'name': 'Timesheets',
+            'link': reverse_lazy('timesheets_view'),
+            'permissions': [],
+        },
+        {
+            'name': 'Bank holidays',
+            'link': reverse_lazy('bankholiday_view'),
+            'permissions': [],
+        },
+        {
+            'name': 'EPAS codes',
+            'link': reverse_lazy('epas_view'),
+            'permissions': [],
+        },
+    ],
+    'permissions': [],
+}

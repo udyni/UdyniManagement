@@ -1,31 +1,29 @@
-{% extends "FinancialReporting/index.html" %}
-
+{% extends "UdyniManagement/page.html" %}
 {% block content %}
 
-{% if form.errors %}
-    {% for field in form %}
-        {% for error in field.errors %}
-            <div class="alert alert-danger">
-                <strong>{{ error|escape }}</strong>
-            </div>
-        {% endfor %}
-    {% endfor %}
-    {% for error in form.non_field_errors %}
-        <div class="alert alert-danger">
-            <strong>{{ error|escape }}</strong>
-        </div>
-    {% endfor %}
-{% endif %}
+<div class="card mb-4">
+  <div class="card-body">
 
-<form action="" enctype="multipart/form-data" method="post">
-{% csrf_token %}
-<table>
-{{ form.as_table }}
-</table>
-<div class="d-flex justify-content-center">
-  <input type="submit" value="Import" class="btn btn-default" />
-  <a href="{% url 'epas_view' %}" class="btn btn-default">Cancel</a>
+    <form action="" method="post">
+    {% csrf_token %}
+      <div>
+        {% include 'UdyniManagement/bootstrap_form.html' with form=form %}
+        <button type="submit" class="btn btn-success btn-icon-split" aria-label="Import">
+          <span class="icon text-white-50">
+            <i class="fas fa-file-import"></i>
+          </span>
+          <span class="text">Import</span>
+        </button>
+        <a href="{% url 'epas_view' %}" aria-label="Cancel" class="btn btn-danger btn-icon-split">
+          <span class="icon text-white-50">
+            <i class="fas fa-xmark"></i>
+          </span>
+          <span class="text">Cancel</span>
+        </a>
+      </div>
+    </form>
+
+  </div>
 </div>
-</form>
 
 {% endblock %}
