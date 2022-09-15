@@ -20,6 +20,7 @@ class BankHoliday(models.Model):
             models.UniqueConstraint(fields=['year', 'month', 'day', ], name="%(app_label)s_%(class)s_unique"),
         ]
         ordering = ["year", "month", "day"]
+        default_permissions = ()
 
     def __str__(self):
         if self.year != 0:
@@ -59,6 +60,7 @@ class EpasCode(models.Model):
             models.UniqueConstraint(fields=['code', ], name="%(app_label)s_%(class)s_unique"),
         ]
         ordering = ["code", ]
+        default_permissions = ()
 
 
 class PersonnelCost(models.Model):
@@ -77,6 +79,7 @@ class PersonnelCost(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['year', 'researcher'], name="%(app_label)s_%(class)s_unique"),
         ]
+        default_permissions = ()
 
 
 class PresenceData(models.Model):
@@ -106,6 +109,7 @@ class PresenceData(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['researcher', 'day'], name="%(app_label)s_%(class)s_unique"),
         ]
+        default_permissions = ()
 
 
 class Reporting(models.Model):
@@ -131,6 +135,7 @@ class Reporting(models.Model):
                 check=models.Q(rp_start__lt=models.F("rp_end")),
             ),
         ]
+        default_permissions = ()
 
     def clean(self):
         if self.pk is not None:
@@ -166,6 +171,7 @@ class TimesheetHint(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['reporting_period', 'year', 'month'], name="%(app_label)s_%(class)s_unique"),
         ]
+        default_permissions = ()
 
     def __str__(self):
         return ("{0!s} on {1!s}, WP {2!s} - {3:d}/{4:d} = {5:.1f}"
@@ -194,6 +200,7 @@ class TimesheetMissionHint(models.Model):
                 name="%(app_label)s_%(class)s_unique"
             ),
         ]
+        default_permissions = ()
 
     def clean(self):
         # Check that presence data object referenced by missionday is indeed a
@@ -213,6 +220,7 @@ class TimesheetHours(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['reporting_period', 'day'], name="%(app_label)s_%(class)s_unique"),
         ]
+        default_permissions = ()
 
     def __str__(self):
         s = "TS: period {0:s}".format(self.reporting_period.project.name)

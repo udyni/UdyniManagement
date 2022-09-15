@@ -59,7 +59,7 @@ class PersonnelCostCreate(PermissionRequiredMixin, CreateViewMenu):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = "Add new personnel cost"
-        context['back_url'] = 'cost_view'
+        context['back_url'] = reverse_lazy('cost_view')
         return context
 
 
@@ -73,7 +73,7 @@ class PersonnelCostUpdate(PermissionRequiredMixin, UpdateViewMenu):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = "Modify personnel cost of " + str(context['personnelcost'].researcher)
-        context['back_url'] = 'cost_view'
+        context['back_url'] = reverse_lazy('cost_view')
         return context
 
 
@@ -87,7 +87,7 @@ class PersonnelCostDelete(PermissionRequiredMixin, DeleteViewMenu):
         context = super().get_context_data(**kwargs)
         context['title'] = "Delete personnel cost"
         context['message'] = "Are you sure you want to delete the personnel cost for {0!s} for year {1!s}?".format(context["personnelcost"].researcher, context["personnelcost"].year)
-        context['back_url'] = 'cost_view'
+        context['back_url'] = reverse_lazy('cost_view')
         return context
 
 
@@ -696,7 +696,7 @@ class BankHolidayCreate(PermissionRequiredMixin, CreateViewMenu):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = "Add new bank holiday"
-        context['back_url'] = 'bankholiday_view'
+        context['back_url'] = reverse_lazy('bankholiday_view')
         return context
 
 
@@ -710,7 +710,7 @@ class BankHolidayUpdate(PermissionRequiredMixin, UpdateViewMenu):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = "Modify bank holiday"
-        context['back_url'] = 'bankholiday_view'
+        context['back_url'] = reverse_lazy('bankholiday_view')
         return context
 
 
@@ -724,7 +724,7 @@ class BankHolidayDelete(PermissionRequiredMixin, DeleteViewMenu):
         context = super().get_context_data(**kwargs)
         context['title'] = "Delete bank holiday"
         context['message'] = "Are you sure you want to delete the bank holiday: {0!s}?".format(context['bankholiday'])
-        context['back_url'] = 'bankholiday_view'
+        context['back_url'] = reverse_lazy('bankholiday_view')
         return context
 
 
@@ -861,7 +861,7 @@ class ReportingUpdate(PermissionRequiredMixin, UpdateViewMenu):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = "Editing reporting period "
-        context['back_url'] = 'reporting_view'
+        context['back_url'] = reverse_lazy('reporting_view')
         return context
 
 
@@ -882,7 +882,7 @@ class ReportingDelete(PermissionRequiredMixin, DeleteViewMenu):
                 " (WP: {0!s})".format(context['reporting'].wp.name) if context['reporting'].wp else "",
         ]
         context['message'] = "Are you sure you want to delete the reporting period from {0!s} to {1!s} for {2!s} on the project {3!s}{4!s}?".format(*values)
-        context['back_url'] = 'reporting_view'
+        context['back_url'] = reverse_lazy('reporting_view')
         print(context)
         return context
 
