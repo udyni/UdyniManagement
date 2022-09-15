@@ -1,7 +1,43 @@
 {% load generic %}
 {% load euro %}
 
+<div class="card mb-4">
+  <div class="card-header">
+    <h6 class="m-0 font-weight-bold text-primary"><b>Summary</b></h6>
+  </div>
+  <div class="card-body table-responsive">
+    <table cellspacing="0" cellpadding="0" class="table table-sm table-hover">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Stanziamento</th>
+          <th>Variazione +</th>
+          <th>Variazione -</th>
+          <th>Assestato</th>
+          <th>Impegnato</th>
+          <th>Pagato</th>
+          <th>Residuo</th>
+        </tr>
+      <thead>
+      <tbody>
+        <tr>
+          <td></td>
+          <td>{{ totals.stanziamento | euro }}</td>
+          <td>{{ totals.var_piu | euro }}</td>
+          <td>{{ totals.var_meno | euro }}</td>
+          <td>{{ totals.assestato | euro }}</td>
+          <td>{{ totals.impegnato | euro }}</td>
+          <td>{{ totals.pagato | euro }}</td>
+          <td>{{ totals.residuo | euro }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
 {% for voce, esercizi in situazione.items %}
+
 <div class="card mb-4">
   <div class="card-header">
     <h6 class="m-0 font-weight-bold text-primary"><b>{{ voce }}:</b> {{ voci|dictkey:voce }}</h6>

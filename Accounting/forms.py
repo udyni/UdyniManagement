@@ -1,5 +1,5 @@
 from django import forms
-from .models import GAE
+from .models import GAE, SplitImpegno
 
 
 class GaeForm(forms.ModelForm):
@@ -8,7 +8,7 @@ class GaeForm(forms.ModelForm):
 
     class Meta:
         model = GAE
-        fields = ['project', 'name', 'description']
+        fields = ['project', 'name', 'description', 'include_funding']
         widgets = {
             'name': forms.HiddenInput(),
             'description': forms.HiddenInput(),

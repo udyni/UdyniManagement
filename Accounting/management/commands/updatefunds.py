@@ -1,8 +1,11 @@
 import time
 import datetime
+import os
+import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.db.models import Q
 from Accounting.models import GAE, VoceSpesa, Stanziamento, Variazione, Impegno, Mandato
 from sigla.sigla import SIGLA
 
@@ -11,8 +14,27 @@ class Command(BaseCommand):
     help = 'Update funds, impegni and mandati'
 
     def handle(self, *args, **options):
+        # Start logger
+        self.logger = logging.getLogger('UpdateFunds')
+        self.logger.setLevel(logging.INFO if not settings.DEBUG else logging.DEBUG)
+
+        # Define formatter
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        # Add console handler
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO if not settings.DEBUG else logging.DEBUG)
+        ch.setFormatter(formatter)
+        self.logger.addHandler(ch)
+
+        # Add file logger
+        fh = logging.FileHandler(os.path.join(settings.BASE_DIR, "updatefunds.log"))
+        fh.setLevel(logging.WARNING)
+        fh.setFormatter(formatter)
+        self.logger.addHandler(fh)
+
         # Load SIGLA interface
-        sigla = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, settings.DEBUG)
+        sigla = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, self.logger)
 
         # First get projects informations
         # NOTE: better to take all projects as the call for a single one takes anyway tens of seconds...
@@ -20,7 +42,6 @@ class Command(BaseCommand):
 
         # Get all GAEs
         gaes = GAE.objects.all()
-
 
         # Cycle over each GAE and update info
         for gae in gaes:
@@ -39,6 +60,7 @@ class Command(BaseCommand):
                     c = sigla.getCompetenza(gae.name, y)
 
                     # Cycle over each 'voce'
+                    new_pk = []
                     for k, v in c.items():
 
                         # Get Voce
@@ -70,8 +92,12 @@ class Command(BaseCommand):
                         stanziamento.pagato = v['pagato']
                         stanziamento.da_pagare = v['dapagare']
                         stanziamento.save()
+                        new_pk.append(stanziamento.pk)
                         if settings.DEBUG:
-                            print("[D] Updated 'stanziamento' for gae {0:s}, year {1:d}, 'voce' {2:s}".format(gae.name, y, k))
+                            self.logger.debug("Updated 'stanziamento' for gae {0:s}, year {1:d}, 'voce' {2:s}".format(gae.name, y, k))
+
+                    # Delete 'stanziamento' not updated by comeptenza (otherwise residui will add up at every update)
+                    Stanziamento.objects.filter(Q(gae=gae, esercizio=y) & ~Q(pk__in=new_pk)).delete()
 
                     # Each stanziamento competenza should be updated with
                     # modifications in the following years as residui
@@ -111,7 +137,8 @@ class Command(BaseCommand):
 
                             stanziamento.var_piu += v['esercizi'][y]['var_piu_imp']
                             stanziamento.var_meno += v['esercizi'][y]['var_meno_imp']
-                            stanziamento.assestato = v['esercizi'][y]['assestato']
+                            #stanziamento.assestato = v['esercizi'][y]['assestato'] # NOTE: questo assestato si riferisce allo stanziamento improprio del residuo...
+                            stanziamento.assestato += (v['esercizi'][y]['var_piu_imp'] - v['esercizi'][y]['var_meno_imp'])
                             stanziamento.impegnato += v['esercizi'][y]['var_piu_obblpro'] - v['esercizi'][y]['var_meno_obblpro'] + v['esercizi'][y]['impegnato']
                             stanziamento.residuo = v['esercizi'][y]['residuo']
                             stanziamento.pagato += v['esercizi'][y]['pagato']
@@ -119,7 +146,7 @@ class Command(BaseCommand):
                             stanziamento.save()
 
                 except Exception as e:
-                    print("[E] Failed to update 'stanziamenti' for GAE {0:s} for year {1:d} (Error: {2!s})".format(gae.name, y, e))
+                    self.logger.error("Failed to update 'stanziamenti' for GAE {0:s} for year {1:d} (Error: {2!s})".format(gae.name, y, e))
 
                 try:
                     # Get variazioni
@@ -131,7 +158,7 @@ class Command(BaseCommand):
                             voce = VoceSpesa.objects.get(voce=var['voce'])
                         except VoceSpesa.DoesNotExist:
                             # Does not exist. This should not happen as the voce should have been added in the previous step
-                            print("[E] 'voce' {0:s} does not exist in database. Something is wrong (GAE: {1:s}, esercizio: {2:d}, variazione: {3:d}".format(var['voce'], gae.name, y, var['numero']))
+                            self.logger.error("'voce' {0:s} does not exist in database. Something is wrong (GAE: {1:s}, esercizio: {2:d}, variazione: {3:d})".format(var['voce'], gae.name, y, var['numero']))
                             continue
 
                         try:
@@ -149,13 +176,13 @@ class Command(BaseCommand):
                             variazione.numero = var['numero']
                             variazione.voce = voce
                             if settings.DEBUG:
-                                print("[D] Adding 'variazione ' {0:d} for gae {1:s} year {2:d} 'voce' {3:s}".format(var['numero'], gae.name, y, var['voce']))
+                                self.logger.debug("Adding 'variazione ' {0:d} for gae {1:s} year {2:d} 'voce' {3:s}".format(var['numero'], gae.name, y, var['voce']))
 
                         # Update variazione if needed
                         variazione.tipo = var['tipo']
                         variazione.stato = var['stato']
-                        variazione.riferimenti = var['riferimenti']
-                        variazione.descrizione = var['descrizione']
+                        variazione.riferimenti = var['riferimenti'] if var['riferimenti'] is not None else "None"
+                        variazione.descrizione = var['descrizione'] if var['descrizione'] is not None else "None"
                         variazione.cdrSrc = var['cdr_prop']
                         variazione.cdrDst = var['cdr_ass']
                         variazione.importo = var['importo']
@@ -163,7 +190,7 @@ class Command(BaseCommand):
                         variazione.save()
 
                 except Exception as e:
-                     print("[E] Failed to update 'variazioni' for GAE {0:s} for year {1:d} (Error: {2!s})".format(gae.name, y, e))
+                     self.logger.error("Failed to update 'variazioni' for GAE {0:s} for year {1:d} (Error: {2!s})".format(gae.name, y, e))
 
                 try:
                     # Get impegni
@@ -175,11 +202,11 @@ class Command(BaseCommand):
                             voce = VoceSpesa.objects.get(voce=im['voce'])
                         except VoceSpesa.DoesNotExist:
                             # Does not exist. This should not happen as the voce should have been added in the previous step
-                            print("[E] 'voce' {0:s} does not exist in database. Something is wrong (GAE: {1:s}, esercizio: {2:d}, impegno: {3:d}".format(im['voce'], gae.name, y, im['impegno']))
+                            self.logger.error("'voce' {0:s} does not exist in database. Something is wrong (GAE: {1:s}, esercizio: {2:d}, impegno: {3:d})".format(im['voce'], gae.name, y, im['impegno']))
                             continue
 
                         try:
-                            impegno = Impegno.objects.get(gae=gae, esercizio=y, numero=im['impegno'])
+                            impegno = Impegno.objects.get(gae=gae, esercizio=y, esercizio_orig=im['esercizio_orig'], numero=im['impegno'])
                             if y < datetime.date.today().year:
                                 # If 'impegno' already exists and is relative to a past year, we can leave it as it will not change
                                 continue
@@ -191,7 +218,7 @@ class Command(BaseCommand):
                             impegno.numero = im['impegno']
                             impegno.voce = voce
                             if settings.DEBUG:
-                                print("[D] Adding 'impegno' {0:d} for gae {1:s} year {2:d} 'voce' {3:s}".format(im['impegno'], gae.name, y, im['voce']))
+                                self.logger.debug("Adding 'impegno' {0:d} for gae {1:s} year {2:d} 'voce' {3:s}".format(im['impegno'], gae.name, y, im['voce']))
 
                         # Update impegno if needed
                         impegno.description = im['descrizione']
@@ -204,24 +231,38 @@ class Command(BaseCommand):
                         impegno.save()
 
                 except Exception as e:
-                    print("[E] Failed to update 'impegni' for GAE {0:s} for year {1:d} (Error: {2!s})".format(gae.name, y, e))
+                    self.logger.error("Failed to update 'impegni' for GAE {0:s} for year {1:d} (Error: {2!s})".format(gae.name, y, e))
 
             if settings.DEBUG:
-                print("GAE {0:s} done in {1:.2f}s".format(gae.name, time.time() - s))
+                self.logger.debug("GAE {0:s} done in {1:.2f}s".format(gae.name, time.time() - s))
 
-        # Update 'mandati'
+        # Delete old 'mandati'
+        Mandato.objects.all().delete()
+
+        # Create 'mandati'
         for im in Impegno.objects.all():
 
             try:
                 if settings.DEBUG:
-                    print("[D] Checking 'impegno' {0!s}".format(im))
+                    self.logger.debug("Checking 'impegno' {0!s}".format(im))
                 mandati = sigla.getMandati(im.numero, im.esercizio_orig, im.esercizio)
                 if not len(mandati):
                     continue
 
                 for m in mandati:
+                    # If 'mandato' has not date, skip it as it was not paid
+                    if m['data'] is None:
+                        continue
+                    # If 'mandato' is canceled, ignore
+                    if m['stato'] == 'A':
+                        continue
+
                     try:
                         mandato = Mandato.objects.get(impegno=im, numero=m['numero'])
+                        # We already have a 'mandato' linked to 'impegno' with the same number.
+                        # We have different amounts referring to different invoices, but payed together
+                        mandato.importo += m['importo']
+                        mandato.save()
                     except Mandato.DoesNotExist:
                         mandato = Mandato()
                         mandato.impegno = im
@@ -234,7 +275,7 @@ class Command(BaseCommand):
                         mandato.save()
 
                         if settings.DEBUG:
-                            print("[D] Added 'mandato' {0:d} for 'impegno' {1:d}/{2:d}".format(mandato.numero, mandato.impegno.numero, mandato.impegno.esercizio_orig))
+                            self.logger.debug("Added 'mandato' {0:d} for 'impegno' {1:d}/{2:d}".format(mandato.numero, mandato.impegno.numero, mandato.impegno.esercizio_orig))
 
             except Exception as e:
-                print("[E] Failed to get 'mandati' for 'impegno' {0:d}/{1:d} for year {2:d} (Error: {3!s})".format(im.numero, im.esercizio_orig, im.esercizio, e))
+                self.logger.error("Failed to get 'mandati' for 'impegno' {0:d}/{1:d} for year {2:d} (Error: {3!s})".format(im.numero, im.esercizio_orig, im.esercizio, e))
