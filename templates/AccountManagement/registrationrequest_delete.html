@@ -3,7 +3,9 @@
 
 <div class="card mb-4">
   <div class="card-body">
-    <p>{{ message }}</p>
+    <p>Are you sure you want to delete the registration request from
+      <b>{{ object.name }} {{ object.surname }}</b> with status <b> {{ object.get_status_display }}</b>?
+    </p>
 
     <form action="" method="POST">
       {% csrf_token %}
