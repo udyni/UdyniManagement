@@ -1024,7 +1024,7 @@ class SplitVariazioniDelete(PermissionRequiredMixin, DeleteViewMenu):
 
 
 # ===================
-# Founding
+# Funding
 
 class Funding(PermissionRequiredMixin, TemplateViewMenu):
     template_name = "Accounting/funding.html"
