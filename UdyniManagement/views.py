@@ -1,10 +1,10 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.http import JsonResponse
-
+from distutils.log import error
+from ftplib import error_temp
+from django.shortcuts import render
 from django.views import View
+from django.views.generic import TemplateView
 from django.views.generic.list import ListView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .menu import UdyniMenu
@@ -26,6 +26,12 @@ class EmptyView(LoginRequiredMixin, View):
 
 # =============================================
 # EXTENDED VIEWS WITH MENU
+class TemplateViewMenu(TemplateView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = UdyniMenu().getMenu(self.request.user)
+        return context
+
 class ListViewMenu(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -49,3 +55,40 @@ class DeleteViewMenu(DeleteView):
         context = super().get_context_data(**kwargs)
         context['menu'] = UdyniMenu().getMenu(self.request.user)
         return context
+
+class FormViewMenu(FormView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = UdyniMenu().getMenu(self.request.user)
+        return context
+
+
+# HTTP Error views
+def udyni_404_view(request, exception):
+    context = {'exception': exception}
+    if request.user.is_authenticated:
+        context['menu'] = UdyniMenu().getMenu(request.user)
+        response = render(request, '404_user.html', context)
+    else:
+        response = render(request, '404.html', context)
+    response.status_code = 404
+    return response
+
+def udyni_403_view(request, exception):
+    context = {'exception': exception}
+    if request.user.is_authenticated:
+        context['menu'] = UdyniMenu().getMenu(request.user)
+        response = render(request, '403_user.html', context)
+    else:
+        response = render(request, '403.html', context)
+    response.status_code = 403
+    return response
+
+
+# Generic error view
+def udyni_error_view(request, error_message):
+    context = {
+        'error': error_message,
+        'menu': UdyniMenu().getMenu(request.user),
+    }
+    return render(request, 'UdyniManagement/error.html', context)

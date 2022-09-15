@@ -20,16 +20,21 @@ def menu_include(reference):
 class UdyniMenu(object):
 
     def __check_permissions(self, user, permissions):
-        if user.is_superuser or user.is_staff:
+        if user.is_superuser:
             return True
         else:
-            if 'is_staff' in permissions:
-                return False
-
+            check = []
             for perm in permissions:
+                mandatory = False
+                if perm[0] == '!':
+                    perm = perm[1:]
+                    mandatory = True
                 if not user.has_perm(perm):
-                    return False
-            return True
+                    if mandatory:
+                        return False
+                else:
+                    check.append(True)
+            return len(check) > 0
 
     def getMenu(self, user):
         """ Return a menu structure filtered by the given user permissions

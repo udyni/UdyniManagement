@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from xml.sax import handler
 from django.contrib import admin
 from django.urls import include, path
 from . import views
@@ -24,29 +25,36 @@ urlpatterns = [
     path('accounts/', include('AccountManagement.urls')),
     path('projects/', include('Projects.urls')),
     path('accounting/', include('Accounting.urls')),
-    path('reporting/', include('FinancialReporting.urls')),
+    #path('reporting_old/', include('FinancialReporting.urls')),
+    path('reporting/', include('Reporting.urls')),
     path('sigla/', include('sigla.urls')),
     path('admin/', admin.site.urls),
 ]
 
 menu = [
     {
+        'name': 'Platform management',
+        'sections': [
+            menu_include('AccountManagement.urls'),
+        ],
+    },
+    {
         'name': 'Project Management',
         'sections': [
             menu_include('Projects.urls'),
             menu_include('Accounting.urls'),
-            menu_include('FinancialReporting.urls'),
+            menu_include('Reporting.urls'),
         ],
     },
     {
         'name': 'Services',
         'sections': [
-            {
-                'name': 'Request VPN certificate',
-                'link': '/git',
-                'subsections': [],
-                'permissions': [],
-            },
+            #{
+            #    'name': 'Request VPN certificate',
+            #    'link': '/git',
+            #    'subsections': [],
+            #    'permissions': [],
+            #},
             {
                 'name': 'Git',
                 'link': '/git',
@@ -63,8 +71,15 @@ menu = [
                 'name': 'Postgres Admin',
                 'link': '/pgadmin',
                 'subsections': [],
-                'permissions': ['is_staff', ],
+                'permissions': ['is_superuser', ],
             },
         ],
     },
 ]
+
+
+## ERROR HANDLERS
+handler403 = 'UdyniManagement.views.udyni_403_view'
+handler404 = 'UdyniManagement.views.udyni_404_view'
+
+

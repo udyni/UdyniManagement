@@ -30,14 +30,15 @@ SECRET_KEY = 'django-insecure-#m^ta)8wnr+v=@o*t5#n&coip**2brq!!j@b8i8-=_+j$3zo9=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
 
 INSTALLED_APPS = [
     'AccountManagement.apps.AccountmanagementConfig',
-    'FinancialReporting.apps.FinancialreportingConfig',
+    'FinancialReporting.apps.FinancialreportingConfig',  ## Old financial reporting app
+    'Reporting.apps.ReportingConfig',
     'Projects.apps.ProjectsConfig',
     'Accounting.apps.AccountingConfig',
     'Tags.apps.TagsConfig',
@@ -167,6 +168,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 10,
+        },
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -184,9 +188,9 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'CET'
 
-USE_I18N = True
+USE_I18N = False
 
-USE_L10N = True
+USE_L10N = False
 
 USE_TZ = True
 
