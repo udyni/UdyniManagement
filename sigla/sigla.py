@@ -11,20 +11,38 @@ import time
 import datetime
 import requests
 import json
+import logging
 
 
 class SIGLA(object):
 
-    def __init__(self, username, password, debug=False):
+    def __init__(self, username, password, logger=None):
         """ Initialize object
         """
+        # Check logger
+        if logger is None:
+            # Start logger
+            self.logger = logging.getLogger('SIGLA')
+            self.logger.setLevel(logging.INFO)
+
+            # Define formatter
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+            # Add console handler
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.INFO)
+            ch.setFormatter(formatter)
+            self.logger.addHandler(ch)
+
+        else:
+            self.logger = logger
+
         # Store credentials
         self.__credentials = (username, password)
         self.__cds = "036"
         self.__cdu = "036.001"
         self.__cdr = "036.001.000"
         self.__base_url = "https://contab.cnr.it/SIGLA/"
-        self.__debug = debug
 
 
     def getCds(self):
@@ -120,22 +138,19 @@ class SIGLA(object):
                     message = "Fetch failed"
                 raise requests.HTTPError('[Error {0:d}] {1:s}'.format(r.status_code, message))
 
-        if self.__debug:
-            print("[SIGLA] Got {0!s} Results: {1:d}".format(url, total_items))
+        self.logger.debug("[SIGLA] Got {0!s} Results: {1:d}".format(url, total_items))
 
         return out
 
 
     def getProgetti(self, pg_progetto=None):
         # Load data
-        if self.__debug:
-            s = time.time()
+        s = time.time()
         filters = []
         if pg_progetto is not None:
             filters.append(('pg_progetto', pg_progetto))
         data = self.postRequest('ConsProgettiAction.json', filters=filters)
-        if self.__debug:
-            print("Progetti retrieved in {0:.2f}s".format(time.time() - s))
+        self.logger.debug("Progetti retrieved in {0:.2f}s".format(time.time() - s))
 
         # Extract needed data
         projects = {}
@@ -153,11 +168,9 @@ class SIGLA(object):
 
     def getGAE(self, pg_progetto):
         # Load data
-        if self.__debug:
-            s = time.time()
+        s = time.time()
         data = self.postRequest('ConsGAEAction.json', filters=[('pg_progetto', pg_progetto)])
-        if self.__debug:
-            print("GAE retrieved in {0:.2f}s".format(time.time() - s))
+        self.logger.debug("GAE retrieved in {0:.2f}s".format(time.time() - s))
 
         # Extract needed data
         gae = {}
@@ -167,18 +180,33 @@ class SIGLA(object):
         return gae
 
 
+    def filterVoce(self, voce):
+        filter_map = {
+            '1.01.03.01.02.007.01': '13012',  # Altri materiali tecnico-specialistici non sanitari
+            '1.01.03.01.02.999.01': '13017',  # Altri beni e materiali di consumo
+            '1.01.03.02.09.005.01': '13074',  # Manutenzione ordinaria e riparazioni di attrezzature
+            '1.01.03.02.11.009.01': '13083',  # Prestazioni tecnico-scientifiche a fini di ricerca
+            '1.01.03.02.12.003.01': '13087',  # Collaborazioni coordinate e a progetto
+            '1.02.02.01.05.001.01': '22010',  # Attrezzature scientifiche
+        }
+
+        if voce in filter_map:
+            return filter_map[voce]
+        else:
+            return voce
+
+
     def getCompetenza(self, gae, esercizio):
         # Load data
-        if self.__debug:
-            s = time.time()
+        s = time.time()
         data = self.postRequest('ConsGaeCompetenzaAction.json', filters=[('cdCentroResponsabilita', self.getCdr()), ('cdLineaAttivita', gae), ('esercizio', esercizio)])
-        if self.__debug:
-            print("Competenza retrieved in {0:.2f}s".format(time.time() - s))
+        self.logger.debug("Competenza retrieved in {0:.2f}s".format(time.time() - s))
 
         # Extract needed data
         gae = {}
         for el in data:
-            gae[el['cdElementoVoce']] = {
+            voce = self.filterVoce(el['cdElementoVoce'])
+            gae[voce] = {
                 'descrizione': el['dsElementoVoce'],
                 'stanziamento': el['imStanzInizialeA1'],
                 'var_piu': el['variazioniPiu'],
@@ -197,24 +225,23 @@ class SIGLA(object):
 
     def getResidui(self, gae, esercizio=datetime.date.today().year, esercizio_residuo=None):
         # Load data
-        if self.__debug:
-            s = time.time()
+        s = time.time()
         if esercizio_residuo is not None:
             data = self.postRequest('ConsGAEResSpeVocAction.json', filters=[('cd_centro_responsabilita', self.getCdr()), ('cd_linea_attivita', gae), ('esercizio', esercizio), ('esercizio_res', esercizio_residuo)], esercizio=esercizio)
         else:
             data = self.postRequest('ConsGAEResSpeVocAction.json', filters=[('cd_centro_responsabilita', self.getCdr()), ('cd_linea_attivita', gae), ('esercizio', esercizio)], esercizio=esercizio)
-        if self.__debug:
-            print("Residui retrieved in {0:.2f}s".format(time.time() - s))
+        self.logger.debug("Residui retrieved in {0:.2f}s".format(time.time() - s))
 
         # Extract needed data
         gae = {}
         for el in data:
-            if el['cd_elemento_voce'] not in gae:
-                gae[el['cd_elemento_voce']] = {
+            voce = self.filterVoce(el['cd_elemento_voce'])
+            if voce not in gae:
+                gae[voce] = {
                     'descrizione': el['ds_elemento_voce'],
                     'esercizi': {},
                 }
-            gae[el['cd_elemento_voce']]['esercizi'][el['esercizio_res']] = {
+            gae[voce]['esercizi'][el['esercizio_res']] = {
                 'stanz_improprio': el['im_stanz_res_improprio'],
                 'stanz_proprio': el['iniziale'],
                 'var_piu_imp': el['var_piu_stanz_res_imp'],
@@ -233,11 +260,9 @@ class SIGLA(object):
 
     def getImpegni(self, gae, esercizio):
         # Load data
-        if self.__debug:
-            s = time.time()
+        s = time.time()
         data = self.postRequest('ConsImpegnoGaeAction.json', filters=[('cdUnitaOrganizzativa', self.getCdu()), ('cdLineaAttivita', gae), ('esercizio', esercizio), ])
-        if self.__debug:
-            print("Impegni retrieved in {0:.2f}s".format(time.time() - s))
+        self.logger.debug("Impegni retrieved in {0:.2f}s".format(time.time() - s))
 
         # Extract needed data
         impegni = []
@@ -247,7 +272,7 @@ class SIGLA(object):
                 'esercizio_orig': el['esercizioOriginale'],
                 'impegno': el['pgObbligazione'],
                 'descrizione': el['dsObbligazione'],
-                'voce': el['cdElementoVoce'],
+                'voce': self.filterVoce(el['cdElementoVoce']),
                 'competenza': el['imScadenzaComp'],
                 'residui': el['imScadenzaRes'],
                 'doc_competenza': el['imAssociatoDocAmmComp'],
@@ -261,11 +286,9 @@ class SIGLA(object):
 
     def getVariazioni(self, gae, esercizio):
         # Load data
-        if self.__debug:
-            s = time.time()
+        s = time.time()
         data = self.postRequest('ConsVarCompResAction.json', filters=[('gae', gae), ('esercizio', esercizio), ], esercizio=esercizio)
-        if self.__debug:
-            print("Variazioni retrieved in {0:.2f}s".format(time.time() - s))
+        self.logger.debug("Variazioni retrieved in {0:.2f}s".format(time.time() - s))
 
         # Extract needed data
         variazioni = []
@@ -274,14 +297,13 @@ class SIGLA(object):
             importo = 0.0
             for im in ['importo', 'imDecInt', 'imDecEst', 'imAccInt', 'imAccEst', 'imEntrata']:
                 if el[im] != 0:
-                    if self.__debug :
-                        print("[D] Found non-null '{0:s}', value = {1:.2f}".format(im, el[im]))
+                    self.logger.debug("[Var] Found non-null '{0:s}', value = {1:.2f}".format(im, el[im]))
                     if importo == 0:
                         importo = el[im]
                     else:
                         if importo != el[im]:
                             # TODO: handle better!
-                            print("[E] Found a non matching importo!!!")
+                            self.logger.error("[Var] Found a non matching importo!!!")
 
             variazioni.append({
                 'tipo': el['tipoVar'],
@@ -293,7 +315,7 @@ class SIGLA(object):
                 'cdr_ass': el['cdrAssegn'],
                 'es_residuo': el['esResiduo'],
                 'importo': importo,
-                'voce': el['voceDelPiano'],
+                'voce': self.filterVoce(el['voceDelPiano']),
                 'data': datetime.date.fromtimestamp(el['dtApprovazione']/1000) if el['dtApprovazione'] else None
            })
 
@@ -301,11 +323,9 @@ class SIGLA(object):
 
 
     def getMandati(self, obbligazione, esercizio_orig, esercizio):
-        if self.__debug:
-            s = time.time()
+        s = time.time()
         data = self.postRequest('ConsRicercaMandatiPerTerzoAction.json', filters=[('pg_obbligazione', obbligazione), ('esercizio_ori_obbligazione', esercizio_orig)], esercizio=esercizio)
-        if self.__debug:
-            print("Mandati retrieved in {0:.2f}s".format(time.time() - s))
+        self.logger.debug("Mandati retrieved in {0:.2f}s".format(time.time() - s))
 
         # Extract needed data
         mandati = []
@@ -317,19 +337,20 @@ class SIGLA(object):
                     'id_terzo': el['cd_terzo'],
                     'terzo': el['denominazione_sede'],
                     'importo': el['im_mandato_riga'],
-                    'data': datetime.date.fromtimestamp(el['dt_pagamento']/1000) if el['dt_pagamento'] else None
+                    'voce': self.filterVoce(el['cd_elemento_voce']),
+                    'stato': el['stato_mandato'],
+                    'data': datetime.date.fromtimestamp(el['dt_pagamento']/1000) if el['dt_pagamento'] else None,
+                    'annullamento': datetime.date.fromtimestamp(el['dt_annullamento']/1000) if el['dt_annullamento'] else None,
                 })
         except Exception as e:
-            print("[{0:s}] {1!s}".format(type(e).__name__, e))
-            print(data)
+            self.logger.error("[{0:s}] {1!s} (Obbl.: {2:d} Es. orig.: {3:d} Es.: {4:d}".format(type(e).__name__, e, obbligazione, esercizio_orig, esercizio))
             return []
 
         return mandati
 
 
     def getFatture(self, mandato, esercizio):
-        if self.__debug:
-            s = time.time()
+        s = time.time()
         fatture = []
         # First retrieve pg_docamm from ConsMandatoRigaAction.json
         data = s.postRequest('ConsMandatoRigaAction.json', filters=[('pg_mandato', mandato), ('esercizio', esercizio), ], esercizio=esercizio)
@@ -353,7 +374,5 @@ class SIGLA(object):
                     obj['totale'] = df[0]['imTotaleFattura']
                 fatture.append(obj)
 
-        if self.__debug:
-            print("Fatture retrieved in {0:.2f}s".format(time.time() - s))
-
+        self.logger.debug("Fatture retrieved in {0:.2f}s".format(time.time() - s))
         return fatture

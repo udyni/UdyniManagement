@@ -3,20 +3,24 @@ import time
 import datetime
 import traceback
 import json
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 from django.views import View
 from django.http import JsonResponse
 from django.core.serializers.json import DjangoJSONEncoder
+from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from UdyniManagement.menu import UdyniMenu
 
 from .sigla import SIGLA
 
+from Accounting.models import GAE
+
 
 # Create your views here.
-class SiglaManualView(View):
+class SiglaManualView(PermissionRequiredMixin, View):
     http_method_names = ['get', ]
+    permission_required = 'Accounting.GAE_manage'
 
     def get(self, request, *args, **kwargs):
 
@@ -27,7 +31,7 @@ class SiglaManualView(View):
         }
 
         # Get info.json
-        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, settings.DEBUG)
+        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD)
         try:
             data = s.getRequest("info.json")
 
@@ -48,8 +52,9 @@ class SiglaManualView(View):
         return render(request, 'sigla/manual_main.html', context)
 
 
-class SiglaAjaxManualView(View):
+class SiglaAjaxManualView(PermissionRequiredMixin, View):
     http_method_names = ['get', ]
+    permission_required = 'Accounting.GAE_manage'
 
     def get(self, request, *args, **kwargs):
 
@@ -59,7 +64,7 @@ class SiglaAjaxManualView(View):
         if 'action' in request.GET:
             action = re.sub(r'\W+', '', request.GET['action'])
 
-            s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, settings.DEBUG)
+            s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD)
             try:
                 data = s.getRequest("{0:s}.json".format(action))
                 response['data'] = data
@@ -73,8 +78,9 @@ class SiglaAjaxManualView(View):
         return JsonResponse(response)
 
 
-class SiglaProgetti(View):
+class SiglaProgetti(PermissionRequiredMixin, View):
     http_method_names = ['get', ]
+    permission_required = 'Projects.project_manage'
 
     def get(self, request, *args, **kwargs):
 
@@ -87,7 +93,7 @@ class SiglaProgetti(View):
                 print("Cache expired on {0:s}".format(datetime.datetime.fromtimestamp(last_update).isoformat()))
             try:
                 # Get data from SIGLA
-                s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, settings.DEBUG)
+                s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD)
                 projects = s.getProgetti()
                 last_update = time.time()
                 # Encode to JSON and store in session
@@ -116,13 +122,14 @@ class SiglaProgetti(View):
         return dct
 
 
-class SiglaGAE(View):
+class SiglaGAE(PermissionRequiredMixin, View):
     http_method_names = ['get', ]
+    permission_required = 'Accounting.GAE_manage'
 
     def get(self, request, *args, **kwargs):
 
         # Sigla interface
-        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, settings.DEBUG)
+        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD)
 
         try:
             gae = s.getGAE(self.kwargs['pg_progetto'])
@@ -134,18 +141,33 @@ class SiglaGAE(View):
         return JsonResponse(response)
 
 
-class SiglaGAECompetenza(View):
+class SiglaGAECompetenza(PermissionRequiredMixin, View):
     http_method_names = ['get', ]
+    permission_required = 'Accounting.GAE_view'
+    only_own_gae = False
+
+    def has_permission(self):
+        p = super().has_permission()
+        if not p and self.request.user.has_perm('Accounting.gae_view_own'):
+            self.only_own_gae = True
+            return True
+        return p
 
     def get(self, request, *args, **kwargs):
 
         # Sigla interface
-        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, settings.DEBUG)
+        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD)
 
         try:
             esercizio = self.kwargs['esercizio']
         except:
             esercizio = datetime.date.today().year
+
+        # Check gae
+        if self.only_own_gae:
+            gae = get_object_or_404(GAE, name=self.kwargs['gae'])
+            if gae.project.pi.username != request.user:
+                self.handle_no_permission()
 
         try:
             gae = s.getCompetenza(self.kwargs['gae'], esercizio)
@@ -157,13 +179,28 @@ class SiglaGAECompetenza(View):
         return JsonResponse(response)
 
 
-class SiglaGAEResidui(View):
+class SiglaGAEResidui(PermissionRequiredMixin, View):
     http_method_names = ['get', ]
+    permission_required = 'Accounting.GAE_view'
+    only_own_gae = False
+
+    def has_permission(self):
+        p = super().has_permission()
+        if not p and self.request.user.has_perm('Accounting.gae_view_own'):
+            self.only_own_gae = True
+            return True
+        return p
 
     def get(self, request, *args, **kwargs):
 
         # Sigla interface
-        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, settings.DEBUG)
+        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD)
+
+        # Check gae
+        if self.only_own_gae:
+            gae = get_object_or_404(GAE, name=self.kwargs['gae'])
+            if gae.project.pi.username != request.user:
+                self.handle_no_permission()
 
         try:
             gae = s.getResidui(self.kwargs['gae'])
@@ -175,13 +212,14 @@ class SiglaGAEResidui(View):
         return JsonResponse(response)
 
 
-class SiglaGAEImpegni(View):
+class SiglaGAEImpegni(PermissionRequiredMixin, View):
     http_method_names = ['get', ]
+    permission_required = 'Accounting.GAE_view'
 
     def get(self, request, *args, **kwargs):
 
         # Sigla interface
-        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, settings.DEBUG)
+        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD)
 
         try:
             esercizio = self.kwargs['esercizio']
@@ -198,13 +236,14 @@ class SiglaGAEImpegni(View):
         return JsonResponse(response)
 
 
-class SiglaGAEVariazioni(View):
+class SiglaGAEVariazioni(PermissionRequiredMixin, View):
     http_method_names = ['get', ]
+    permission_required = 'Accounting.GAE_view'
 
     def get(self, request, *args, **kwargs):
 
         # Sigla interface
-        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, settings.DEBUG)
+        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD)
 
         try:
             esercizio = self.kwargs['esercizio']
@@ -222,13 +261,14 @@ class SiglaGAEVariazioni(View):
         return JsonResponse(response)
 
 
-class SiglaMandati(View):
+class SiglaMandati(PermissionRequiredMixin, View):
     http_method_names = ['get', ]
+    permission_required = 'Accounting.GAE_view'
 
     def get(self, request, *args, **kwargs):
 
         # Sigla interface
-        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, settings.DEBUG)
+        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD)
 
         try:
             esercizio = self.kwargs['esercizio']
@@ -246,13 +286,14 @@ class SiglaMandati(View):
         return JsonResponse(response)
 
 
-class SiglaFatture(View):
+class SiglaFatture(PermissionRequiredMixin, View):
     http_method_names = ['get', ]
+    permission_required = 'Accounting.GAE_view'
 
     def get(self, request, *args, **kwargs):
 
         # Sigla interface
-        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, settings.DEBUG)
+        s = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD)
 
         try:
             esercizio = self.kwargs['esercizio']
