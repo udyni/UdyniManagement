@@ -92,9 +92,12 @@ table.timesheet td.total {
 }
 
 table.timesheet span.sum-mismatch {
-  font-size: 9pt;
   color: darkred;
   font-weight: bold;
+}
+
+.editable-cell {
+  cursor: pointer;
 }
 
 @media print {
