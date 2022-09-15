@@ -144,7 +144,7 @@
           }
           if(p.days[k].mission)
             s.addClass("missionday");
-          else
+          else if(p.id != -1)
             s.addClass("editable-cell");
         }
       }
