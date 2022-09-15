@@ -4,7 +4,7 @@ from .models import ResearcherRole, Project
 
 class ResearcherRoleForm(forms.ModelForm):
 
-    start_date = forms.DateField(input_formats=['%d/%m/%Y', '%d-%m-%Y'], widget=forms.DateInput())
+    start_date = forms.DateField(input_formats=['%d/%m/%Y', '%Y-%m-%d'], widget=forms.DateInput())
 
     class Meta:
         model = ResearcherRole
@@ -20,7 +20,7 @@ class ProjectForm(forms.ModelForm):
 
     class Meta:
         model = Project
-        fields = ['name', 'agency', 'reference', 'pi', 'sigla_name', 'sigla_id', 'sigla_cup']
+        fields = ['name', 'agency', 'reference', 'pi', 'depreciation', 'sigla_name', 'sigla_id', 'sigla_cup']
         widgets = {
             'sigla_id': forms.HiddenInput(),
             'sigla_cup': forms.HiddenInput(),

@@ -19,7 +19,7 @@ urlpatterns = [
     path('registry/add', views.ProjectCreate.as_view(), name='project_add'),
     path('registry/<int:pk>/modify', views.ProjectUpdate.as_view(), name='project_mod'),
     path('registry/<int:pk>/delete', views.ProjectDelete.as_view(), name='project_del'),
-    path('registry/<int:pk>/gae', views.ProjectGaeRedirect.as_view(), name='project_gae'),
+    #path('registry/<int:pk>/gae', views.ProjectGaeRedirect.as_view(), name='project_gae'),
 
     path('workpackages/', RedirectView.as_view(url=reverse_lazy('project_view'), permanent=False), name='wp_view'),
     path('workpackages/add', RedirectView.as_view(url=reverse_lazy('project_view'), permanent=False), name='wp_add'),
@@ -36,13 +36,13 @@ menu = {
         {
             'name': 'Researchers',
             'link': reverse_lazy('researcher_view'),
-            'permissions': [],
+            'permissions': ['Projects.researcher_view', ],
         },
         {
             'name': 'Projects',
             'link': reverse_lazy('project_view'),
-            'permissions': [],
+            'permissions': ['Projects.project_view', ],
         },
     ],
-    'permissions': [],
+    'permissions': ['Projects.project_view', 'Projects.researcher_view'],
 }
