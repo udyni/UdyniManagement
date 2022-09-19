@@ -21,7 +21,7 @@ class UdyniLdap(object):
             self._l = ldap.initialize(settings.AUTH_LDAP_SERVER_URI)
 
             # Set connection options
-            for k, v in settings.AUTH_LDAP_CONNECTION_OPTIONS:
+            for k, v in settings.AUTH_LDAP_CONNECTION_OPTIONS.items():
                 self._l.set_option(k, v)
 
             # If user and password are None bind as authbot
