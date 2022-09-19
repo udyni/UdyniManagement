@@ -2,12 +2,11 @@ from typing import OrderedDict
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.http import JsonResponse, Http404, FileResponse
-from django.core.exceptions import MultipleObjectsReturned, PermissionDenied
+from django.core.exceptions import MultipleObjectsReturned, PermissionDenied, ValidationError
 
 from django.db.models import Count, Sum, Q, F, Value, ExpressionWrapper, BooleanField
 from django.db.models.functions import ExtractYear, ExtractMonth, Concat, Coalesce
-from jsonschema import ValidationError
-from sympy import total_degree
+
 from Projects.models import Project, Researcher, ResearcherRole, WorkPackage
 from .models import EpasCode, BankHoliday, PersonnelCost, PresenceData, ReportingPeriod, ReportedWork, ReportedWorkWorkpackage, ReportedMission, TimesheetHours
 
@@ -32,12 +31,9 @@ import re
 import pandas as pd
 from lxml import etree
 import datetime
-import math
 import calendar
 import json
-import random
 import copy
-import time
 
 
 # =============================================
