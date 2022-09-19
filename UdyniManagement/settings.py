@@ -20,12 +20,11 @@ from django_auth_ldap.config import LDAPSearch, PosixGroupType
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-#m^ta)8wnr+v=@o*t5#n&coip**2brq!!j@b8i8-=_+j$3zo9='
+SECRET_KEY = '********** TO BE REPLACED **********'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -48,7 +47,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'widget_tweaks',
     'crispy_forms',
 ]
 
@@ -88,7 +86,7 @@ AUTH_LDAP_GROUP_TYPE = PosixGroupType()
 AUTH_LDAP_CONNECTION_OPTIONS = {
     ldap.OPT_X_TLS_CACERTFILE: r"/etc/ssl/certs/udyniCA.pem",
     ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_ALLOW,
-    ldap.OPT_X_TLS_NEWCTX: 0
+    ldap.OPT_X_TLS_NEWCTX: 0,
 }
 
 # User attribute map
@@ -115,9 +113,9 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Enable debug for ldap server connection
-logger = logging.getLogger('django_auth_ldap')
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.DEBUG)
+# logger = logging.getLogger('django_auth_ldap')
+# logger.addHandler(logging.StreamHandler())
+# logger.setLevel(logging.DEBUG)
 
 
 ROOT_URLCONF = 'UdyniManagement.urls'
@@ -146,8 +144,6 @@ WSGI_APPLICATION = 'UdyniManagement.wsgi.application'
 
 DATABASES = {
     'default': {
-#        'ENGINE': 'django.db.backends.sqlite3',
-#        'NAME': BASE_DIR / 'db.sqlite3',
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'management',
         'USER' : 'management',
@@ -200,9 +196,10 @@ DATE_INPUT_FORMATS = ['%d/%m/%Y', '%Y-%m-%d']
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'root')
+STATIC_ROOT = os.path.join(BASE_DIR, 'http_static')
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'root'),
 )
 
 # Default primary key field type
@@ -217,3 +214,20 @@ CRISPY_FAIL_SILENTLY = not DEBUG
 # SIGLA
 SIGLA_USERNAME = "app.ifn"
 SIGLA_PASSWORD = "********"
+
+# Default email configuration
+DEFAULT_FROM_EMAIL = 'UDynI Management <no-reply@udyni.lab>'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+SERVER_EMAIL = 'UDynI Management <no-reply@udyni.lab>'
+
+# Email configuration (smtp.udyni.lab)
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.udyni.lab'
+EMAIL_PORT = 25
+
+# Email configuration (smtp-relay.sendinblue.com)
+# EMAIL_USE_TLS = True
+# EMAIL_HOST = 'smtp-relay.sendinblue.com'
+# EMAIL_PORT = 587
+# EMAIL_HOST_USER = 'udynilabs@gmail.com'
+# EMAIL_HOST_PASSWORD = '********'
