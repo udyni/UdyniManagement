@@ -1,14 +1,8 @@
 import datetime
 import calendar
 import random
-import math
 
-from matplotlib.style import available
-from more_itertools import first
-
-from Tags.templatetags.tr_month import month_num2it
-
-from django.db.models import Q, F, Sum, Subquery, OuterRef, Value
+from django.db.models import Q, F, Sum, Value
 from django.db.models.functions import ExtractYear, ExtractMonth, Coalesce
 from .models import EpasCode, PresenceData, ReportedWork, ReportedMission, TimesheetHours
 from .utils import check_bank_holiday, get_workpackages_fractions
