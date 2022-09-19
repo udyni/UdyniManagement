@@ -1,28 +1,22 @@
-from django.http import JsonResponse, Http404
-from django.shortcuts import get_object_or_404, render
-from django.urls import reverse_lazy
-from django.db.models import Q, F, Sum, Value, ExpressionWrapper, IntegerField, CharField
-from django.db.models.functions import Coalesce
-# from django.core.serializers.json import DjangoJSONEncoder
-
 import datetime
 import re
 from collections import OrderedDict
 
-from sqlalchemy import distinct
+from django.http import JsonResponse, Http404
+from django.shortcuts import get_object_or_404, render
+from django.urls import reverse_lazy
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.db.models import Q, F, Sum, Value, ExpressionWrapper, IntegerField, CharField
+from django.db.models.functions import Coalesce
+from django.views import View
+
+from UdyniManagement.menu import UdyniMenu
+from UdyniManagement.views import ListViewMenu, CreateViewMenu, TemplateViewMenu, UpdateViewMenu, DeleteViewMenu
 
 from .models import VoceSpesa, GAE, Stanziamento, Variazione, Impegno, Mandato
 from .models import SplitContab, SplitBudget, SplitImpegno, SplitVariazione
 from .forms import GaeForm
 from .utils import create_split_accounting_detail
-
-from django.contrib.auth.mixins import PermissionRequiredMixin
-
-# from .forms import ResearcherRoleForm, ProjectForm
-
-from django.views import View
-from UdyniManagement.menu import UdyniMenu
-from UdyniManagement.views import ListViewMenu, CreateViewMenu, TemplateViewMenu, UpdateViewMenu, DeleteViewMenu
 
 
 # =============================
