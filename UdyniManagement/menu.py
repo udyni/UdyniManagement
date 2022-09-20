@@ -22,6 +22,8 @@ class UdyniMenu(object):
     def __check_permissions(self, user, permissions):
         if user.is_superuser:
             return True
+        elif permissions is None:
+            return True
         else:
             check = []
             for perm in permissions:
