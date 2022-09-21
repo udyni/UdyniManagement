@@ -45,7 +45,7 @@ urlpatterns = [
 menu = {
     'name': 'Accounting',
     'link': '',
-    'icon': 'fa-sack-dollar',
+    'icon': 'fa-solid fa-sack-dollar',
     'subsections': [
         {
             'name': 'GAE',

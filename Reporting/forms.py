@@ -4,17 +4,13 @@ import pandas as pd
 from django import forms
 from django.db.models import CharField
 from django.db.models import Q, F, Value
-from django.db.models.functions import ExtractYear, ExtractMonth, Concat, Coalesce
+from django.db.models.functions import Concat
 from django.core.exceptions import ValidationError
-
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Field, HTML
 
 from Projects.models import Researcher, WorkPackage
 from Reporting.models import EpasCode, PresenceData, ReportedWork, ReportedMission, ReportedWorkWorkpackage
 
 from Tags.templatetags import tr_month
-
 
 
 class EpasCodeUpdateForm(forms.Form):

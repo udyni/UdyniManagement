@@ -1,5 +1,5 @@
 from django import forms
-from .models import GAE, SplitImpegno
+from .models import GAE
 
 
 class GaeForm(forms.ModelForm):

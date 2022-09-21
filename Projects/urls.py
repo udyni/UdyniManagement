@@ -31,7 +31,7 @@ urlpatterns = [
 menu = {
     'name': "Projects registry",
     'link': reverse_lazy('project_view'),
-    'icon': 'fa-diagram-project',
+    'icon': 'fa-solid fa-diagram-project',
     'subsections': [
         {
             'name': 'Researchers',

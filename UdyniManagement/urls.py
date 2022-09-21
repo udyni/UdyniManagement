@@ -13,7 +13,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from xml.sax import handler
 from django.contrib import admin
 from django.urls import include, path
 from . import views
@@ -58,6 +57,7 @@ menu = [
             {
                 'name': 'Git',
                 'link': '/git',
+                'icon': 'fa-brands fa-github',
                 'subsections': [],
                 'permissions': None,
                 'target': '_blank',
@@ -65,6 +65,7 @@ menu = [
             {
                 'name': 'Wiki',
                 'link': '/xwiki',
+                'icon': 'fa-brands fa-wikipedia-w',
                 'subsections': [],
                 'permissions': None,
                 'target': '_blank',
@@ -72,6 +73,7 @@ menu = [
             {
                 'name': 'Postgres Admin',
                 'link': '/pgadmin',
+                'icon': 'fa-solid fa-database',
                 'subsections': [],
                 'permissions': ['is_superuser', ],
                 'target': '_blank',
@@ -84,5 +86,3 @@ menu = [
 ## ERROR HANDLERS
 handler403 = 'UdyniManagement.views.udyni_403_view'
 handler404 = 'UdyniManagement.views.udyni_404_view'
-
-

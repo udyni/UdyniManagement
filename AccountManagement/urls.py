@@ -51,7 +51,7 @@ urlpatterns = [
 menu = {
     'name': 'User management',
     'link': '',
-    'icon': 'fa-users',
+    'icon': 'fa-solid fa-users',
     'subsections': [
         {
             'name': 'Manage Users',

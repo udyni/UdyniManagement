@@ -1,8 +1,5 @@
 import datetime
-from http.client import ACCEPTED
 from django.db import models
-
-# Create your models here.
 
 
 class RegistrationRequest(models.Model):

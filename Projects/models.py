@@ -1,6 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 import datetime
+
+UserModel = get_user_model()
 
 
 class Researcher(models.Model):
@@ -11,7 +13,7 @@ class Researcher(models.Model):
     # Surname
     surname = models.CharField(max_length=200)
     # User name
-    username = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True)
+    username = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
 
     class Meta:
         ordering = ["surname", "name"]

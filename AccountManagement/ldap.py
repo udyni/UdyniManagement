@@ -1,14 +1,12 @@
 import os
-#from xml.dom import ValidationErr
 import ldap
 import ldap.modlist
 import hashlib
 import base64
 import logging
-import datetime
 import time
 
-from django.conf import settings # import the settings file
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 
 

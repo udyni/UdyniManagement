@@ -1,4 +1,3 @@
-from audioop import reverse
 from django.urls import path, reverse_lazy
 from django.views.generic.base import RedirectView
 from UdyniManagement.views import EmptyView
@@ -58,7 +57,7 @@ urlpatterns = [
 menu = {
     'name': 'Reporting',
     'link': reverse_lazy('reporting_index'),
-    'icon': 'fa-file-invoice-dollar',
+    'icon': 'fa-solid fa-file-invoice-dollar',
     'subsections': [
         {
             'name': 'Personnel costs',

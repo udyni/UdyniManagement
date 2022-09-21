@@ -1,5 +1,3 @@
-from distutils.log import error
-from ftplib import error_temp
 from django.shortcuts import render
 from django.views import View
 from django.views.generic import TemplateView
