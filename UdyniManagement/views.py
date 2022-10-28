@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.views import View
 from django.views.generic import TemplateView
+from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -24,41 +25,46 @@ class EmptyView(LoginRequiredMixin, View):
 
 # =============================================
 # EXTENDED VIEWS WITH MENU
-class TemplateViewMenu(TemplateView):
+class UdyniDefaultMixin(object):
+    def get_title(self):
+        if hasattr(self, 'title'):
+            return self.title
+        else:
+            return ''
+
+    def get_back_url(self):
+        if hasattr(self, 'get_success_url'):
+            return self.get_success_url()
+        else:
+            return ''
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['menu'] = UdyniMenu().getMenu(self.request.user)
+        context['title'] = self.get_title()
+        context['back_url'] = self.get_back_url()
         return context
 
-class ListViewMenu(ListView):
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['menu'] = UdyniMenu().getMenu(self.request.user)
-        return context
+class TemplateViewMenu(UdyniDefaultMixin, TemplateView):
+    pass
 
-class CreateViewMenu(CreateView):
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['menu'] = UdyniMenu().getMenu(self.request.user)
-        return context
+class ListViewMenu(UdyniDefaultMixin, ListView):
+    pass
 
-class UpdateViewMenu(UpdateView):
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['menu'] = UdyniMenu().getMenu(self.request.user)
-        return context
+class DetailViewMenu(UdyniDefaultMixin, DetailView):
+    pass
 
-class DeleteViewMenu(DeleteView):
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['menu'] = UdyniMenu().getMenu(self.request.user)
-        return context
+class CreateViewMenu(UdyniDefaultMixin, CreateView):
+    pass
 
-class FormViewMenu(FormView):
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['menu'] = UdyniMenu().getMenu(self.request.user)
-        return context
+class UpdateViewMenu(UdyniDefaultMixin, UpdateView):
+    pass
+
+class DeleteViewMenu(UdyniDefaultMixin, DeleteView):
+    pass
+
+class FormViewMenu(UdyniDefaultMixin, FormView):
+    pass
 
 
 # HTTP Error views
