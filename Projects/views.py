@@ -218,7 +218,7 @@ class ProjectDelete(PermissionRequiredMixin, DeleteViewMenu):
 
 
 class ProjectGaeRedirect(PermissionRequiredMixin, View):
-    permission_required = 'Projects.project_view'
+    permission_required = 'Projects.gae_view'
     http_method_names = ['get', ]
 
     def get(self, request, *args, **kwargs):
