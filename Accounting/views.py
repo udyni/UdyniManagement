@@ -1022,7 +1022,7 @@ class SplitVariazioniDelete(PermissionRequiredMixin, DeleteViewMenu):
 
 class Funding(PermissionRequiredMixin, TemplateViewMenu):
     template_name = "Accounting/funding.html"
-    permission_required = 'Accounting.GAE_view'
+    permission_required = 'Accounting.gae_view'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
