@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 import datetime
 
 UserModel = get_user_model()
@@ -145,3 +146,29 @@ class WorkPackage(models.Model):
         ]
         ordering = ["project__name", "name", ]
         default_permissions = ()
+
+
+class ConflictOfInterest(models.Model):
+    """ Handle conflict of interesets between a researcher and the current director
+    """
+    researcher = models.ForeignKey(Researcher, on_delete=models.CASCADE, related_name="conflicts")
+    director = models.ForeignKey(Researcher, on_delete=models.CASCADE, related_name="director_in_conflict")
+    delegate = models.ForeignKey(Researcher, on_delete=models.CASCADE, related_name="delegate_for_conflict")
+    start_date = models.DateField()
+    end_date = models.DateField(blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = "ConflictsOfInterest"
+        constraints = [
+            models.UniqueConstraint(fields=['researcher', 'director', 'start_date'], name="%(app_label)s_%(class)s_unique"),
+        ]
+        ordering = ["director", "researcher", "-start_date"]
+        default_permissions = ()
+        permissions = [
+            ('conflict_manage', 'Manage conflicts of interest'),
+        ]
+
+    def clean(self):
+        # Start date should be before end date, and the two dates cannot be the same
+        if self.end_date is not None and self.start_date >= self.end_date:
+            raise ValidationError('Start date should be before end date, and the two dates cannot be the same')
