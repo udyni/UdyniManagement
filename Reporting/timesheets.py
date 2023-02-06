@@ -157,8 +157,12 @@ def CheckTimesheetData(rid, year, month):
                         break
         else:
             # No workpackages
-            ts = next(f)
-            if ts['total_hours'] != w.hours:
+            try:
+                # No workpackages
+                ts = next(f)
+                if ts['total_hours'] != w.hours:
+                    return False
+            except StopIteration:
                 return False
 
     # Everything matched!
