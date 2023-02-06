@@ -1620,7 +1620,7 @@ class TimeSheetsAjaxGenerate(PermissionRequiredMixin, View):
         ndays = calendar.monthrange(year, month)[1]
 
         try:
-            data = GetTimesheetData(self.researcher.pk, year, month)
+            data = GetTimesheetData(self.researcher.pk, year, month, generate=True)
             return JsonResponse({'generated': True, 'error': False, 'ts': data})
 
         except ReportingError as e:
