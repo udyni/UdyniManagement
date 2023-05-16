@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 
 from Projects.models import Researcher, WorkPackage
 from Reporting.models import EpasCode, PresenceData, ReportedWork, ReportedMission, ReportedWorkWorkpackage
+from Reporting.utils import ConvertApostrophe2Accent
 
 from Tags.templatetags import tr_month
 
@@ -52,9 +53,9 @@ class PresenceInputForm(forms.Form):
             else:
                 # Check that the file matches the selected researcher
                 for n in xls.sheet_names:
-                    m = re.match(r"([a-zA-Z ]+)_([a-z]+)(\d+)", n)
+                    m = re.match(r"([a-zA-Z \']+)_([a-z]+)(\d+)", n)
                     if m is not None:
-                        if m.groups()[0] == name:
+                        if ConvertApostrophe2Accent(m.groups()[0]) == name:
                             good_sheets += 1
                 if good_sheets == 0:
                     raise ValidationError("Excel file does not contain data for the selected researcher")

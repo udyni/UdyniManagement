@@ -57,9 +57,11 @@ def process_presences(xls, researcher):
     else:
         # From EPAS
         for n in xls.sheet_names:
-            m = re.match(r"([a-zA-Z ]+)_([a-z]+)(\d+)", n)
+            print(n)
+            m = re.match(r"([a-zA-Z \']+)_([a-z]+)(\d+)", n)
             if m is not None:
                 name = ConvertApostrophe2Accent(str(m.groups()[0]))
+                print(name)
                 if name != researcher:
                     continue
                 year = int(m.groups()[2])
