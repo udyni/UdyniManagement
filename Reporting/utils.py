@@ -59,7 +59,7 @@ def process_presences(xls, researcher):
         for n in xls.sheet_names:
             m = re.match(r"([a-zA-Z ]+)_([a-z]+)(\d+)", n)
             if m is not None:
-                name = str(m.groups()[0])
+                name = ConvertApostrophe2Accent(str(m.groups()[0]))
                 if name != researcher:
                     continue
                 year = int(m.groups()[2])
@@ -198,3 +198,18 @@ class ReportingError(Exception):
     The behaviour is the same as a normal exception
     """
     pass
+
+
+def ConvertApostrophe2Accent(name):
+    vowels = 'aeiou'
+    accented_vowels = {'a': 'à', 'e': 'è', 'i': 'ì', 'o': 'ò', 'u': 'ù'}
+    offset = 0
+    while True:
+        i = name[offset:].find("'")
+        if i == -1:
+            return name
+        i += offset
+
+        if name[i-1] in vowels:
+            name = name[0:i-1] + accented_vowels[name[i-1]] + name[i+1:]
+        offset = i
