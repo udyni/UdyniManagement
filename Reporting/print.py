@@ -302,16 +302,24 @@ def PrintPFDTimesheet(contextes):
         #==================
         # SIGNATURES
 
-        # Researcher and supervisor signature style
-        sup_signature_style = TableStyle([
+        # Researcher signature style
+        researcher_signature_style = TableStyle([
             ('SPAN', (0,0), (1,0)),
             ('BACKGROUND', (0,0), (1,0), (230/255.0, 230/255.0, 240/255.0)),
-            #('LINEBELOW', (-1, -2), (-1, -2), 0.5, (90/255.0, 92/255.0, 105/255.0)),
             ('LINEBELOW', (-1, -1), (-1, -1), 0.5, (135/255.0, 138/255.0, 158/255.0)),
             ('VALIGN',(0,0),(1,0),'MIDDLE'),
             ('VALIGN',(0,1),(0,-1),'BOTTOM'),
         ])
 
+        # Director signature style
+        director_signature_style = TableStyle([
+            ('SPAN', (0,0), (1,0)),
+            ('BACKGROUND', (0,0), (1,0), (230/255.0, 230/255.0, 240/255.0)),
+            ('LINEBELOW', (-1, -2), (-1, -2), 0.5, (135/255.0, 138/255.0, 158/255.0)),
+            ('LINEBELOW', (-1, -1), (-1, -1), 0.5, (135/255.0, 138/255.0, 158/255.0)),
+            ('VALIGN',(0,0),(1,0),'MIDDLE'),
+            ('VALIGN',(0,1),(0,-1),'BOTTOM'),
+        ])
 
         # PI signature style
         pi_signature_style = TableStyle([
@@ -354,10 +362,10 @@ def PrintPFDTimesheet(contextes):
              ''],
         ]
 
-        person_signature = Table(person_signature_data, colWidths=(2*cm, 6.5*cm), rowHeights=0.8*cm, style=sup_signature_style)
+        person_signature = Table(person_signature_data, colWidths=(2*cm, 6.5*cm), rowHeights=0.8*cm, style=researcher_signature_style)
         wp, hp = person_signature.wrapOn(doc, aw/3 - 1*cm, ah)
 
-        director_signature = Table(director_signature_data, colWidths=(2*cm, 6.5*cm), rowHeights=0.8*cm, style=sup_signature_style)
+        director_signature = Table(director_signature_data, colWidths=(2*cm, 6.5*cm), rowHeights=0.8*cm, style=director_signature_style)
         wd, hd = director_signature.wrapOn(doc, aw/3 - 1*cm, ah)
 
         signatures = []

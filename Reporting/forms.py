@@ -156,7 +156,7 @@ class ReportedWorkForm(forms.ModelForm):
                         self.reported_workpackages.append(new_rp)
                     except WorkPackage.DoesNotExist:
                         ValidationError({k: 'Could not find the corresponding workpackage'})
-                    except ValueError:
+                    except (TypeError, ValueError):
                         ValidationError({k: 'Invalid fraction specified for workpackage'})
         return data
 
