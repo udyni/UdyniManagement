@@ -25,6 +25,8 @@ table.reporting tr > td.col-actions {
 /* TIMESHEETS tables */
 table.timesheet {
   color: black;
+  cursor: default;
+  font-size: 10pt;
 }
 
 table.timesheet td.holiday {
@@ -41,8 +43,19 @@ table.timesheet tr.days > th.day {
   text-align: center;
 }
 
+table.timesheet tr.project > td {
+  border-bottom: 1px solid black;
+}
+
 table.timesheet tr.project > td.hours {
   text-align: center;
+}
+
+table.timesheet tr > td {
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 table.timesheet tr.project.has_wps > td {
@@ -51,7 +64,6 @@ table.timesheet tr.project.has_wps > td {
 
 table.timesheet tr.wp > td {
   border-bottom: 0px;
-  font-size: 9pt;
 }
 
 table.timesheet tr.wp > td.hours {
@@ -91,36 +103,16 @@ table.timesheet td.total {
   border-left: 1px solid black;
 }
 
-table.timesheet span.sum-mismatch {
-  color: darkred;
+table.timesheet td.sum-mismatch {
+  color: darkred !important;
   font-weight: bold;
 }
 
-.editable-cell {
+table.timesheet td.editable-cell {
   cursor: pointer;
+  background-color: #e0e0e0;
 }
 
-@media print {
-  body {
-    color: black;
-    font-size: 10pt
-  }
-  table.timesheet {
-    font-face: "Roboto Condensed";
-  }
-  table.timesheet td {
-    font-size: 9.5pt;
-  }
-  table.timesheet tr.wp > td {
-    font-size: 8pt;
-  }
-  table.timesheet tr.days > td.day {
-    width: 2em;
-  }
-  @page {
-    size: A4 landscape;
-    /* Margins – the order matches the standard CSS margin property:
-    north, east, south, west. */
-    margin: 1cm 1cm 0.5cm 1cm;
-  }
+table.timesheet td.modified {
+  background-color: aquamarine !important;
 }

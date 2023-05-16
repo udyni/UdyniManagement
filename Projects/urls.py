@@ -26,6 +26,11 @@ urlpatterns = [
     path('workpackages/add/<int:project>', views.WorkPackageCreate.as_view(), name='wp_add_prj'),
     path('workpackages/<int:pk>/modify', views.WorkPackageUpdate.as_view(), name='wp_mod'),
     path('workpackages/<int:pk>/delete', views.WorkPackageDelete.as_view(), name='wp_del'),
+
+    path('conflicts/', views.ConflictList.as_view(), name='conflicts_view'),
+    path('conflicts/add', views.ConflictCreate.as_view(), name='conflicts_add'),
+    path('conflicts/<int:pk>/modify', views.ConflictUpdate.as_view(), name='conflicts_mod'),
+    path('conflicts/<int:pk>/delete', views.ConflictDelete.as_view(), name='conflicts_del'),
 ]
 
 menu = {
@@ -42,6 +47,11 @@ menu = {
             'name': 'Projects',
             'link': reverse_lazy('project_view'),
             'permissions': ['Projects.project_view', ],
+        },
+        {
+            'name': 'Conflicts of Interest',
+            'link': reverse_lazy('conflicts_view'),
+            'permissions': ['Projects.conflicts_manage', ],
         },
     ],
     'permissions': ['Projects.project_view', 'Projects.researcher_view'],

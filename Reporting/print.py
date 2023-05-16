@@ -12,6 +12,7 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
 from reportlab.lib.styles import StyleSheet1, ParagraphStyle
 from reportlab.lib.colors import Color
+from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT, TA_CENTER, TA_RIGHT
 # Typography
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph, Frame, Table, TableStyle
@@ -51,7 +52,7 @@ def loadStyles():
         fontSize=10,
         bulletFontName="Roboto",
         bulletFontSize=10,
-        alignment=0,
+        alignment=TA_LEFT,
     ))
 
     # Create heading style
@@ -60,7 +61,7 @@ def loadStyles():
         parent=stylesheet['Normal'],
         fontName="Roboto",
         fontSize=20,
-        alignment=0,
+        alignment=TA_LEFT,
         # textColor = Color(90/255.0, 92/255.0, 105/255.0, 1),
     ))
 
@@ -69,7 +70,7 @@ def loadStyles():
         parent=stylesheet['Normal'],
         fontName="Roboto",
         fontSize=11,
-        alignment=0,
+        alignment=TA_LEFT,
         textColor=Color(90/255.0, 92/255.0, 105/255.0, 1),
         spaceAfter=6,
     ))
@@ -79,7 +80,7 @@ def loadStyles():
         parent=stylesheet['Normal'],
         fontName="RobotoBold",
         fontSize=16,
-        alignment=0,
+        alignment=TA_LEFT,
         spaceAfter=6,
         # textColor=Color(90/255.0, 92/255.0, 105/255.0, 1),
     ))
@@ -89,7 +90,7 @@ def loadStyles():
         parent=stylesheet['Normal'],
         fontName="RobotoCondensed",
         fontSize=10,
-        alignment=0,
+        alignment=TA_LEFT,
         # textColor=Color(90/255.0, 92/255.0, 105/255.0, 1),
     ))
 
@@ -98,16 +99,25 @@ def loadStyles():
         parent=stylesheet['Normal'],
         fontName="RobotoCondensed",
         fontSize=9,
-        alignment=0,
+        alignment=TA_LEFT,
         textColor=Color(90/255.0, 92/255.0, 105/255.0, 1),
     ))
 
     stylesheet.add(ParagraphStyle(
         'SignatureHeading',
         parent=stylesheet['Normal'],
-        fontName="Roboto",
-        fontSize=10,
-        alignment=0,
+        fontName="RobotoBold",
+        fontSize=9,
+        alignment=TA_CENTER,
+        textColor=Color(90/255.0, 92/255.0, 105/255.0, 1),
+    ))
+
+    stylesheet.add(ParagraphStyle(
+        'SignatureLabel',
+        parent=stylesheet['Normal'],
+        fontName="RobotoBold",
+        fontSize=9,
+        alignment=TA_LEFT,
     ))
 
     stylesheet.add(ParagraphStyle(
@@ -115,7 +125,7 @@ def loadStyles():
         parent=stylesheet['Normal'],
         fontName="RobotoBold",
         fontSize=10,
-        alignment=0,
+        alignment=TA_LEFT,
     ))
 
     stylesheet.add(ParagraphStyle(
@@ -123,7 +133,7 @@ def loadStyles():
         parent=stylesheet['Normal'],
         fontName="Roboto",
         fontSize=9,
-        alignment=0,
+        alignment=TA_LEFT,
     ))
     return stylesheet
 
@@ -142,7 +152,7 @@ def PrintPFDTimesheet(contextes):
 
     # Canvas
     doc = canvas.Canvas(buffer, pagesize=landscape(A4))
-    doc.setTitle("H2020 TimeSheets for {0:s}".format(contextes[0]['researcher']))
+    doc.setTitle(f"H2020 TimeSheets for {contextes[0]['researcher']}")
 
     # Page size
     page_w, page_h = landscape(A4)
@@ -158,7 +168,7 @@ def PrintPFDTimesheet(contextes):
         ah = page_h - 2*cm
 
         # Header
-        header = Paragraph('Time Recording for HORIZON 2020 Actions - <b>{0:s}, {1:d}</b>'.format(month_num2en(context['month']), context['year']), stylesheet['Heading'])
+        header = Paragraph(f"Time Recording for HORIZON 2020 Actions - <b>{month_num2en(context['month'])}, {context['year']:d}</b>", stylesheet['Heading'])
         Frame(1*cm, 1*cm + ah - 0.5*cm, aw, 1*cm).addFromList([header, ], doc)
 
         beneficiary_title = Paragraph("Beneficiary's / Third party's name", style=stylesheet['SubtitleHeading'])
@@ -166,11 +176,11 @@ def PrintPFDTimesheet(contextes):
         Frame(1*cm, 1*cm + ah - 2.5*cm, 2*aw/5, 1.6*cm).addFromList([beneficiary_title, beneficiary], doc),
 
         person_title = Paragraph("Person working on the action", style=stylesheet['SubtitleHeading'])
-        person = Paragraph("{0:s}".format(context['researcher']), style=stylesheet['Subtitle'])
+        person = Paragraph(f"{context['researcher']}", style=stylesheet['Subtitle'])
         Frame(1*cm + 2*aw/5, 1*cm + ah - 2.5*cm, 1.5*aw/5, 1.6*cm).addFromList([person_title, person], doc),
 
         personnel_title = Paragraph("Type of personnel (see GA art. 6.2.A)", style=stylesheet['SubtitleHeading'])
-        personnel = Paragraph("{0:s}".format(context['employment']), style=stylesheet['Subtitle'])
+        personnel = Paragraph(f"{context['employment']}", style=stylesheet['Subtitle'])
         Frame(1*cm + 3.5*aw/5, 1*cm + ah - 2.5*cm, 1.5*aw/5, 1.6*cm).addFromList([personnel_title, personnel], doc),
 
         # Update ah
@@ -195,7 +205,7 @@ def PrintPFDTimesheet(contextes):
 
         # Create data array
         data = []
-        data.append(['Days', ] + [str(d['n']) for d in context['ts']['days']] + ['Σ', ])
+        data.append(['Days', ] + [f"{d['n']:d}" for d in context['ts']['days']] + ['Σ', ])
         table_style.add('LINEBELOW', (0, 0), (-1, 0), 1.5, (0, 0, 0))
 
         # Add holiday shading to styles
@@ -206,15 +216,15 @@ def PrintPFDTimesheet(contextes):
 
         linenum = 1
         for prj in context['ts']['projects']:
-            pname = "{0:s}: {1:s}".format(prj['name'], prj['ref']) if prj['ref'] != '' else prj['name']
+            pname = f"{prj['name']}: {prj['ref']}" if prj['ref'] != '' else prj['name']
             pname = Paragraph(pname, style=stylesheet['TSProject'])
             if prj['has_wps']:
                 # Project with WPs
-                data.append([pname, ] + ["{0:.1f}".format(d['h']) for d in prj['days']] + ["{0:.1f}".format(prj['total']), ])
+                data.append([pname, ] + [f"{d:.1f}" for d in prj['days']] + [f"{prj['total']:.1f}", ])
                 table_style.add('LINEBELOW', (0, linenum), (-1, linenum), 0.75, (224/255.0, 224/255.0, 224/255.0))
                 linenum += 1
                 for wp in prj['wps']:
-                    data.append([Paragraph("{0:s}: {1:s}".format(wp['name'], wp['desc']), style=stylesheet['TSWP']), ] + ["{0:.1f}".format(d['h']) for d in wp['days']] + ["{0:.1f}".format(wp['total']), ])
+                    data.append([Paragraph(f"{wp['name']}: {wp['desc']}", style=stylesheet['TSWP']), ] + [f"{d:.1f}" for d in wp['days']] + [f"{wp['total']:.1f}", ])
                     table_style.add('FONTSIZE', (0, linenum), (-1, linenum), 9)
                     table_style.add('TEXTCOLOR', (0, linenum), (-1, linenum), (90/255.0, 92/255.0, 105/255.0))
                     if wp['last']:
@@ -223,17 +233,17 @@ def PrintPFDTimesheet(contextes):
 
             else:
                 # Project without WPs
-                data.append([pname, ] + ["{0:.1f}".format(d['h']) for d in prj['days']] + ["{0:.1f}".format(prj['total']), ])
+                data.append([pname, ] + [f"{d:.1f}" for d in prj['days']] + [f"{prj['total']:.1f}", ])
                 if prj['name'] != "Internal activities":
                     table_style.add('LINEBELOW', (0, linenum), (-1, linenum), 0.75, (0, 0, 0))
                 linenum += 1
 
         # Add absences line
-        data.append([Paragraph('Absences', style=stylesheet['TSProject']), ] + [d['a'] for d in context['ts']['absence_code']] + ['', ])
+        data.append([Paragraph('Absences', style=stylesheet['TSProject']), ] + [d['code'] for d in context['ts']['days']] + ['', ])
         table_style.add('LINEBELOW', (0, linenum), (-1, linenum), 1.5, (0, 0, 0))
 
         # Add totals line
-        data.append([Paragraph('Total', style=stylesheet['TSProject']), ] + ["{0:.1f}".format(d['h']) for d in context['ts']['day_total']] + ["{0:.1f}".format(context['ts']['grand_total']), ])
+        data.append([Paragraph('Total', style=stylesheet['TSProject']), ] + [f"{d['total']:.1f}" for d in context['ts']['days']] + [f"{context['ts']['grand_total']:.1f}", ])
 
         # Render table
         t = Table(data, colWidths=colwidths, style=table_style)
@@ -291,9 +301,30 @@ def PrintPFDTimesheet(contextes):
 
         #==================
         # SIGNATURES
-        signature_style = TableStyle([
-            ('LINEBELOW', (-1, -1), (-1, -1), 0.5, (90/255.0, 92/255.0, 105/255.0)),
+
+        # Researcher and supervisor signature style
+        sup_signature_style = TableStyle([
+            ('SPAN', (0,0), (1,0)),
+            ('BACKGROUND', (0,0), (1,0), (230/255.0, 230/255.0, 240/255.0)),
+            #('LINEBELOW', (-1, -2), (-1, -2), 0.5, (90/255.0, 92/255.0, 105/255.0)),
+            ('LINEBELOW', (-1, -1), (-1, -1), 0.5, (135/255.0, 138/255.0, 158/255.0)),
+            ('VALIGN',(0,0),(1,0),'MIDDLE'),
+            ('VALIGN',(0,1),(0,-1),'BOTTOM'),
         ])
+
+
+        # PI signature style
+        pi_signature_style = TableStyle([
+            ('SPAN', (0,0), (1,0)),
+            ('BACKGROUND', (0,0), (1,0), (230/255.0, 230/255.0, 240/255.0)),
+            ('LINEBELOW', (-1, -1), (-1, -1), 0.5, (135/255.0, 138/255.0, 158/255.0)),
+            ('VALIGN',(0,0),(1,0),'MIDDLE'),
+            ('VALIGN',(0,1),(0,-1),'BOTTOM'),
+        ])
+
+        #signature_style = TableStyle([
+        #    ('LINEBELOW', (-1, -1), (-1, -1), 0.5, (90/255.0, 92/255.0, 105/255.0)),
+        #])
 
         # Format date
         if context['sign_day'] is not None:
@@ -304,29 +335,42 @@ def PrintPFDTimesheet(contextes):
             sign_day = ""
 
         person_signature_data = [
-            [Paragraph('Signed:', style=stylesheet['SignatureHeading']),
+            [Paragraph('Researcher', style=stylesheet['SignatureHeading']), ''],
+            [Paragraph('Name:', style=stylesheet['SignatureLabel']),
              Paragraph(context['researcher'], style=stylesheet['Signature'])],
-            [Paragraph('Date:', style=stylesheet['SignatureHeading']),
+            [Paragraph('Date:', style=stylesheet['SignatureLabel']),
              Paragraph(sign_day, style=stylesheet['Signature'])],
-            [Paragraph('Signature:', style=stylesheet['SignatureHeading']),
+            [Paragraph('Signature:', style=stylesheet['SignatureLabel']),
              ''],
         ]
 
-        person_signature = Table(person_signature_data, colWidths=(2.5*cm, 6*cm), style=signature_style)
+        director_signature_data = [
+            [Paragraph(context['director'][1], style=stylesheet['SignatureHeading']), ''],
+            [Paragraph('Name:', style=stylesheet['SignatureLabel']),
+             Paragraph(context['director'][0], style=stylesheet['Signature'])],
+            [Paragraph('Date:', style=stylesheet['SignatureLabel']),
+             ''],
+            [Paragraph('Signature:', style=stylesheet['SignatureLabel']),
+             ''],
+        ]
+
+        person_signature = Table(person_signature_data, colWidths=(2*cm, 6.5*cm), rowHeights=0.8*cm, style=sup_signature_style)
         wp, hp = person_signature.wrapOn(doc, aw/3 - 1*cm, ah)
+
+        director_signature = Table(director_signature_data, colWidths=(2*cm, 6.5*cm), rowHeights=0.8*cm, style=sup_signature_style)
+        wd, hd = director_signature.wrapOn(doc, aw/3 - 1*cm, ah)
 
         signatures = []
         tot_h = 0
         for name, projects in context['signatures'].items():
             data = [
-                [Paragraph('Supervisor:', style=stylesheet['SignatureHeading']),
+                [Paragraph(f"PI for projects: {projects}", style=stylesheet['SignatureHeading']), ''],
+                [Paragraph('Name:', style=stylesheet['SignatureLabel']),
                  Paragraph(name, style=stylesheet['Signature'])],
-                [Paragraph('For projects:', style=stylesheet['SignatureProjects']),
-                 Paragraph(projects, style=stylesheet['SignatureProjects'])],
-                [Paragraph('Signature', style=stylesheet['SignatureHeading']),
+                [Paragraph('Signature:', style=stylesheet['SignatureLabel']),
                  ''],
             ]
-            t = Table(data, colWidths=(2.5*cm, 6*cm), style=signature_style)
+            t = Table(data, colWidths=(2*cm, 6.5*cm), rowHeights=0.8*cm, style=pi_signature_style)
             w, h = t.wrapOn(doc, aw/3 - 1*cm, page_h)
             signatures.append((t, w, h))
             tot_h += h
@@ -334,15 +378,18 @@ def PrintPFDTimesheet(contextes):
         # Add spacing to tot_h
         tot_h += 0.5*cm*(len(signatures)-1)
 
-        if tot_h > ah:
+        if max((tot_h, hp + hd)) > ah:
             doc.showPage()
             page_count += 1
             ah = page_h - 2*cm
 
         # Person signature
-        person_signature.drawOn(doc, aw/3, 1*cm + ah - h)
+        person_signature.drawOn(doc, aw/3, 1*cm + ah - hp)
 
-        # Supervisor signatures
+        # Director signature
+        director_signature.drawOn(doc, aw/3, 1*cm + ah - hp - 0.5*cm - hd)
+
+        # PIs signatures
         for t, w, h in signatures:
             t.drawOn(doc, 1*cm + 2*aw/3, 1*cm + ah - h)
             ah -= h + 0.5*cm

@@ -1,12 +1,12 @@
 import datetime
 import calendar
-import random
 
-from django.db.models import Q, F, Sum, Value
+from django.db.models import Q, F, Sum, Value, Subquery, OuterRef
 from django.db.models.functions import ExtractYear, ExtractMonth, Coalesce
 from .models import EpasCode, PresenceData, ReportedWork, ReportedMission, TimesheetHours
 from .utils import check_bank_holiday, get_workpackages_fractions
 from .utils import ReportingError
+from Tags.templatetags import tr_month
 
 
 # Structure of TS data for display/printing
@@ -34,9 +34,9 @@ from .utils import ReportingError
 #           'refe':,
 #           'wps': [
 #               {
-#                   'name': wp name
-#                   'desc': wp desc
-#                   'id':   wp pk   ???
+#                   'name': wp name,
+#                   'desc': wp desc,
+#                   'id':   wp pk   ???,
 #                   'days': [
 #                        {
 #                            'h': hours,
@@ -45,14 +45,15 @@ from .utils import ReportingError
 #                        },
 #                        ...
 #                   ]
-#                   'total': sum
-#                   'last': False
+#                   'sum': hours already in TS,
+#                   'total': total hours on WP,
+#                   'last': False,
 #               },
 #               ...
 #               {
-#                   'name': wp name
-#                   'desc': wp desc
-#                   'id':   wp pk   ???
+#                   'name': wp name,
+#                   'desc': wp desc,
+#                   'id':   wp pk   ???,
 #                   'days': [
 #                       {
 #                           'h': hours,
@@ -61,8 +62,9 @@ from .utils import ReportingError
 #                       },
 #                       ...
 #                   ]
-#                   'total': sum
-#                   'last': True
+#                   'sum': hours already in TS,
+#                   'total': total hours on WP,
+#                   'last': True,
 #               },
 #           ],
 #           'days': [
@@ -73,7 +75,8 @@ from .utils import ReportingError
 #               },
 #               ...
 #           ],
-#           '':,
+#           'sum': hours already in TS,
+#           'total': total hours on project,
 #
 #       },
 #       {
@@ -81,12 +84,6 @@ from .utils import ReportingError
 #       },
 #       ...
 #       NOTE: last project is 'internal activities' with all the left hours and missions
-#   ],
-#   'day_total': [
-#       {
-#           'h': hours,
-#           'holiday': True/False,
-#       },
 #   ],
 #   'grand_total': total hours
 # }
@@ -99,8 +96,10 @@ def round2first(value):
 
 
 def CheckTimesheetData(rid, year, month):
-    """ Check that the TS data is consistent with the reported work.
-    Return True if it is, False otherwise
+    """ Check that the TS data is consistent with the reported work and returns:
+     - ok: true if TS data is consistent
+     - reported: true if month has anything reported
+     - projects: projects IDs that have something reported in the month
     """
 
     # Get reported work
@@ -115,6 +114,21 @@ def CheckTimesheetData(rid, year, month):
             'period__project__name',
             'period__rp_start',
         )
+    )
+
+    # Count reported missions
+    missions = (
+        ReportedMission.objects
+        .annotate(
+            year=ExtractYear('day__day'),
+            month=ExtractMonth('day__day'),
+        )
+        .filter(Q(day__researcher=rid) & Q(year=year) & Q(month=month))
+        .annotate(
+            project_id=F('period__project__id'),
+            project_name=F('period__project__name'),
+        )
+        .distinct()
     )
 
     # Get timesheet hours summary
@@ -140,11 +154,28 @@ def CheckTimesheetData(rid, year, month):
         .order_by()
     )
 
+    all_good = True
+    projects_good = {}
+
     # Check that TS hours match reported work
     for w in work:
+        pname = w.period.project.name
+        if pname not in projects_good:
+            projects_good[pname] = [True, w.period.project.pk]
+        elif not projects_good[pname][0]:
+            # Skip incomplete project
+            continue
+
         # Get WPs
         wps = get_workpackages_fractions(w)
-        f = filter(lambda x: x['report'] == w.pk, ts_data_summary)
+        f = list(filter(lambda x: x['report'] == w.pk, ts_data_summary))
+
+        if not len(f):
+            # Work reported but no TS data
+            projects_good[pname][0] = False
+            all_good = False
+            continue
+
         if wps:
             # Splitted on WPs
             for wp in wps:
@@ -153,33 +184,76 @@ def CheckTimesheetData(rid, year, month):
                         if abs(w.hours * wp['fraction'] - ts['total_hours']) > 0.01:
                             print("TS hours does not match report. Project: {0:s}, Workpackage: {1:s} ({2:.1f} != {3:.1f})".format(w.period.project.name, wp['wp'], w.hours * wp['fraction'], ts['total_hours']))
                             # Failed!
-                            return False
+                            projects_good[pname][0] = False
+                            all_good = False
                         break
+                if not projects_good[pname][0]:
+                    # Check failed on a previous WP, skip the others
+                    break
         else:
-            # No workpackages
-            try:
-                # No workpackages
-                ts = next(f)
-                if ts['total_hours'] != w.hours:
-                    return False
-            except StopIteration:
-                return False
+            ts = f[0]
+            if ts['total_hours'] != w.hours:
+                projects_good[pname][0] = False
+                all_good = False
+
+    # We also need to check that we havent reported more hours in a day that worked hours
+    worked_and_reported_hours = (
+        PresenceData.objects
+        .annotate(
+            year=ExtractYear('day'),
+            month=ExtractMonth('day')
+        )
+        .filter(
+            Q(researcher=rid) &
+            Q(year=year) &
+            Q(month=month)
+        )
+        .order_by('day')
+        .annotate(
+            ts_hours=Coalesce(
+                Subquery(
+                    TimesheetHours.objects
+                    .filter(Q(report__researcher=rid) & Q(day=OuterRef('day')))
+                    .values('day')
+                    .annotate(tot_hours=Sum('hours'))
+                    .values('tot_hours')
+                ),
+                Value(0.0),
+            )
+        )
+    )
+
+    # If any day has more hours reported that worked, we return false but cannot link the error to a specific project
+    for day in worked_and_reported_hours:
+        # We need to approximate worked hours to one decimal digit
+        if round2first(day.ts_hours) > round2first(day.hours):
+            all_good = False
+
+    # Check missions
+    for m in missions:
+        if m.project_name not in projects_good:
+            projects_good[m.project_name] = [True, m.project_id]
 
     # Everything matched!
-    return True
+    return (all_good, len(projects_good) > 0, projects_good)
 
 
-def GetTimesheetData(rid, year, month, generate=False):
+def GetTimesheetData(rid, year, month, project=None, generate=False):
     """ Get timesheet data for the given researcher, year, month
-    Return a tuple: the first element is a boolean indicating if there was a modification
-    since last save, the second is the updated timesheet data
+    Return timesheet data
     Raise ReportingError on error
     """
 
     # If we are not generating and the data is not consistent return
-    consistent = CheckTimesheetData(rid, year, month)
-    if not consistent and not generate:
-        raise ReportingError("Timesheet data for RID {0:d} for month {1:d}/{2:d} is not consistent".format(rid, year, month))
+    ok, reported, projects = CheckTimesheetData(rid, year, month)
+    if not ok and not generate:
+        raise ReportingError(f"Timesheet data for RID {rid} for {tr_month.month_num2en(month)} {year} is not consistent")
+
+    if not generate and (not reported or (project is not None and project.name not in projects)):
+        raise ReportingError(f"Nothing to report for RID {rid} for {tr_month.month_num2en(month)} {year}.")
+
+    if generate and project is not None:
+        raise ReportingError(f"Generation cannot be done for a single project")
 
     # Get reported work
     work = (
@@ -195,14 +269,16 @@ def GetTimesheetData(rid, year, month, generate=False):
         )
     )
 
+    # If project is set filter on it
+    if project is not None:
+        work = work.filter(Q(period__project=project))
+
     # Get timesheet hours
     ts_data = (
         TimesheetHours.objects
         .annotate(
             year=ExtractYear('day'),
             month=ExtractMonth('day'),
-            project_name=F('report__period__project__name'),
-            workpackage_name=F('report_wp__workpackage__name'),
         )
         .filter(
             Q(report__researcher=rid) &
@@ -237,11 +313,9 @@ def GetTimesheetData(rid, year, month, generate=False):
     ndays = calendar.monthrange(year, month)[1]
     data['numdays'] = ndays
     data['days'] = []
-    data['absence_code'] = []
     data['projects'] = []
-    data['day_total'] = []
     data['grand_total'] = 0.0
-    data['modified'] = 0
+    data['ok'] = ok
 
     # Setup days and holiday tag
     for d in range(1, ndays + 1, 1):
@@ -257,14 +331,14 @@ def GetTimesheetData(rid, year, month, generate=False):
         if check_bank_holiday(date):
             bh = True
 
-        # Append day
-        data['days'].append({'n': d, 'holiday': we | bh, 'mission': False})
-
-        # Append absence code
-        data['absence_code'].append({'a': "PH" if bh else "", 'holiday': we | bh})
-
-        # Append day total
-        data['day_total'].append({'h': 0.0, 'mission': False, 'holiday': we | bh})
+        # Append day with holiday tag, mission tag, absence code and total hours
+        data['days'].append({
+            'n': d,
+            'holiday': we | bh,
+            'mission': False,
+            'code': "PH" if bh else "",
+            'total': 0.0,
+        })
 
     # Process presences
     available_hours = [0.0 for i in range(ndays)]
@@ -274,23 +348,22 @@ def GetTimesheetData(rid, year, month, generate=False):
 
         # Store hours (only for working days)
         if p.hours > 0 and p.ts_code is None or p.ts_code == EpasCode.NONE:
-            h = round2first(p.hours)
-            data['day_total'][d]['h'] = h
+            h = p.hours
+            data['days'][d]['total'] = h
             available_hours[d] = h
 
         # Set mission flag
         if p.ts_code == EpasCode.MISSION:
             data['days'][d]['mission'] = True
-            data['day_total'][d]['mission'] = True
 
         # Store absence code
         if p.ts_code == EpasCode.ILLNESS:
-            data['absence_code'][d]['a'] = "IL"
-        elif data['absence_code'][d]['a'] != "PH":
+            data['days'][d]['code'] = "IL"
+        elif data['days'][d]['code'] != "PH":
             if p.ts_code == EpasCode.MISSION:
-                data['absence_code'][d]['a'] = "BT"
+                data['days'][d]['code'] = "BT"
             elif p.ts_code == EpasCode.HOLIDAYS:
-                data['absence_code'][d]['a'] = "AH"
+                data['days'][d]['code'] = "AH"
 
     # Add projects
     p_names = []
@@ -305,6 +378,10 @@ def GetTimesheetData(rid, year, month, generate=False):
             new_p['name'] = name                        # Project name
             new_p['ref'] = w.period.project.reference   # Project reference
             new_p['pi_id'] = w.period.project.pi.pk if w.period.project.pi is not None else None    # Project PI
+            new_p['days'] = [0.0 for i in range(ndays)]
+            new_p['total'] = 0.0
+            new_p['sum'] = 0.0
+            new_p['has_wps'] = False                    # Set has_wps False by default
             data['projects'].append(new_p)
 
         else:
@@ -314,26 +391,18 @@ def GetTimesheetData(rid, year, month, generate=False):
         # Get report workpackages
         wps = get_workpackages_fractions(w)
         if len(wps):
-            new_p['has_wps'] = True   # Period has split over WP
-            new_p['wps'] = []
-            for wp in wps:           # Cycle over WPs
-                # Filter already saved TS data
-                ts = ts_data.filter(project_name=name, workpackage_name=wp['wp'])
+            # Project has WPs
+            new_p['has_wps'] = True   # Period has split over WPs
+            if 'wps' not in new_p:
+                # Add WP list if not present
+                new_p['wps'] = []
 
-                # Get the hours split over days
-                modified, wp_days = GetHoursOverDays(w.period, w.hours * wp['fraction'], ts, year, month, available_hours)  # NB: available_hours is updated!
-                if modified:
-                    print("Modification detected in project {0:s}, workpackage {1:s}".format(name, wp['wp']))
-                    data['modified'] = 1
+            for wp in wps:
+                # Cycle over WPs
 
                 # First check if we already have the WP
                 for new_wp in new_p['wps']:
                     if new_wp['id'] == wp['wp_pk']:
-                        # Alread present
-                        for i, d in enumerate(wp_days):
-                            new_wp['days'][i]['h'] += d['h']
-                        # Update WP total
-                        new_wp['total'] += sum(wp_days)
                         break
                 else:
                     # New workpackage
@@ -341,36 +410,44 @@ def GetTimesheetData(rid, year, month, generate=False):
                     new_wp['id'] = wp['wp_pk']   # WP ID to check for duplicates
                     new_wp['name'] = wp['wp']    # WP name
                     new_wp['desc'] = wp['desc']  # WP description
-                    new_wp['days'] = [{'h': d, 'mission': data['days'][i]['mission'], 'holiday': data['days'][i]['holiday']} for i, d in enumerate(wp_days)]
-                    new_wp['last'] = False       # Set by default as 'not the last'
-                    new_wp['total'] = sum(wp_days)
+                    new_wp['days'] = [0.0 for i in range(ndays)]
+                    new_wp['last'] = False       # Set by default as 'not the last' (NB: needed for rendering...)
+                    new_wp['total'] = 0.0
+                    new_wp['sum'] = 0.0
                     new_p['wps'].append(new_wp)  # Append WP
 
-            new_p['days'] = [{'h': 0.0, 'mission': data['days'][i]['mission'], 'holiday': data['days'][i]['holiday']} for i in range(ndays)]
-            # Sum data on wps
-            new_p['total'] = 0.0
-            for wp in new_p['wps']:
-                for i in range(ndays):
-                    new_p['days'][i]['h'] += wp['days'][i]['h']
-                    new_p['total'] += wp['days'][i]['h']
+                # Add total hours
+                new_wp['total'] += wp['hours']
+                new_p['total'] += wp['hours']
+
+                # Filter already saved TS data
+                ts = ts_data.filter(Q(report=w) & Q(report_wp__workpackage__pk=new_wp['id']))
+
+                # Store saved hours if any
+                for d in ts:
+                    # Add hours
+                    new_wp['days'][d.day.day-1] += d.hours
+                    new_p['days'][d.day.day-1] += d.hours
+                    new_wp['sum'] += d.hours
+                    new_p['sum'] += d.hours
+                    # Subtract from available hours
+                    available_hours[d.day.day-1] -= d.hours
 
         else:
-            # Project has no WP
-            new_p['has_wps'] = False
+            # Add total hours
+            new_p['total'] += w.hours
 
             # Filter already saved TS data
-            ts = ts_data.filter(project_name=name, workpackage_name=None)
+            ts = ts_data.filter(report=w, report_wp=None)
 
-            # Split hours over days
-            modified, p_days = GetHoursOverDays(w.period, w.hours, ts, year, month, available_hours)
-
-            if 'days' not in new_p:
-                new_p['days'] = [{'h':d , 'mission': data['days'][i]['mission'], 'holiday': data['days'][i]['holiday']} for i, d in enumerate(p_days)]
-                new_p['total'] = sum(p_days)
-            else:
-                for i, d in enumerate(p_days):
-                    new_p['days'][i]['h'] += d['h']
-                new_p['total'] += sum(p_days)
+            # Store saved hours if any
+            for d in ts:
+                h = d.hours
+                # Add hours
+                new_p['days'][d.day.day-1] += h
+                new_p['sum'] += h
+                # Subtract from available hours
+                available_hours[d.day.day-1] -= h
 
     # Tag last WP in all projects
     for prj in data['projects']:
@@ -394,13 +471,17 @@ def GetTimesheetData(rid, year, month, generate=False):
         )
     )
 
-    q = Q()
+    # If project is set filter on it
+    if project is not None:
+        rep_m = rep_m.filter(Q(period__project=project))
+
+    q = Q()  # Query used later to select business travels not reported
     for m in rep_m:
         # Add day to query
         q |= Q(day=m.day.day)
         pname = m.period.project.name
         if pname not in p_names:
-            # Project has only missions. We have to add it
+            # Project has only business travels. We have to add it
             new_p = {}
             new_p['id'] = m.period.project.pk           # Project ID
             new_p['name'] = pname                       # Project name
@@ -411,7 +492,8 @@ def GetTimesheetData(rid, year, month, generate=False):
                 new_p['wps'] = []
             else:
                 new_p['has_wps'] = False
-            new_p['days'] = [{'h': 0.0, 'mission': data['days'][i]['mission'], 'holiday': data['days'][i]['holiday']} for i in range(ndays)]
+            new_p['days'] = [0.0 for i in range(ndays)]
+            new_p['sum'] = 0.0
             new_p['total'] = 0.0
 
             # Insert project in the right place
@@ -430,6 +512,7 @@ def GetTimesheetData(rid, year, month, generate=False):
                 p_names.append(pname)
                 data['projects'].append(new_p)
 
+        mh = m.day.hours
         if m.workpackage is not None:
             wid = m.workpackage.pk
             for wp in data['projects'][p_names.index(pname)]['wps']:
@@ -441,9 +524,10 @@ def GetTimesheetData(rid, year, month, generate=False):
                 wp['id'] = wid                   # WP ID to check for duplicates
                 wp['name'] = m.workpackage.name  # WP name
                 wp['desc'] = m.workpackage.desc  # WP description
-                wp['days'] = [{'h': 0.0, 'mission': data['days'][i]['mission'], 'holiday': data['days'][i]['holiday']} for i in range(ndays)]
+                wp['days'] = [0.0 for i in range(ndays)]
                 wp['last'] = False       # Set by default as 'not the last'
                 wp['total'] = 0.0
+                wp['sum'] = 0.0
 
                 # Insert WP in the right place
                 if len(data['projects'][p_names.index(pname)]['wps']):
@@ -458,21 +542,25 @@ def GetTimesheetData(rid, year, month, generate=False):
                 else:
                     data['projects'][p_names.index(pname)]['wps'].append(wp)
 
-            # Add mission to WP
-            wp['days'][m.day.day.day - 1]['h'] = m.day.hours
+            # Add business travel to WP
+            wp['days'][m.day.day.day - 1] = mh
             # Update WP total
-            wp['total'] += m.day.hours
+            wp['total'] += mh
+            wp['sum'] += mh
             # Update project day
-            data['projects'][p_names.index(pname)]['days'][m.day.day.day - 1]['h'] = m.day.hours
+            data['projects'][p_names.index(pname)]['days'][m.day.day.day - 1] = mh
             # Update project total
-            data['projects'][p_names.index(pname)]['total'] += m.day.hours
-            # Update day total
-            data['day_total'][m.day.day.day - 1]['h'] += m.day.hours
+            data['projects'][p_names.index(pname)]['total'] += mh
+            data['projects'][p_names.index(pname)]['sum'] += mh
 
         else:
-            # Add mission to project
-            data['projects'][p_names.index(pname)]['days'][m.day.day.day - 1]['h'] = m.day.hours
-            data['projects'][p_names.index(pname)]['total'] += m.day.hours
+            # Add business travel to project
+            data['projects'][p_names.index(pname)]['days'][m.day.day.day - 1] = mh
+            data['projects'][p_names.index(pname)]['total'] += mh
+            data['projects'][p_names.index(pname)]['sum'] += mh
+
+        # Update day total
+        data['days'][m.day.day.day - 1]['total'] += mh
 
     # Add internal activities
     internal = {
@@ -480,240 +568,27 @@ def GetTimesheetData(rid, year, month, generate=False):
         'ref': '',
         'id': -1,
         'has_wps': False,
-        'days': [{'h': round2first(d), 'mission': data['days'][i]['mission'], 'holiday': data['days'][i]['holiday']} for i, d in enumerate(available_hours)],
+        'days': available_hours,
         'total': sum(available_hours),
-        'generated': 0,
     }
 
-    # Add missions not assigned to any period
+    # Add business travels not assigned to any period
     missions = presences.filter(Q(ts_code=EpasCode.MISSION) & Q(hours__gt=0) & ~q).order_by('day')
     for m in missions:
-        # Add mission
-        internal['days'][m.day.day - 1]['h'] = m.hours
+        mh = m.hours
+        # Add business travel
+        internal['days'][m.day.day - 1] = mh
         # Update internal activities total
-        internal['total'] += m.hours
+        internal['total'] += mh
         # Update day total
-        data['day_total'][m.day.day - 1]['h'] += m.hours
+        data['days'][m.day.day - 1]['total'] += mh
 
     # Add internal activities as last project
     data['projects'].append(internal)
 
-    # Round all sums
-    for prj in data['projects']:
-        if prj['has_wps']:
-            for wp in prj['wps']:
-                wp['total'] = round2first(wp['total'])
-        prj['total'] = round2first(prj['total'])
-
     # Compute grand total
-    for d in data['day_total']:
-        data['grand_total'] += d['h']
-    data['grand_total'] = round2first(data['grand_total'])
+    for d in data['days']:
+        data['grand_total'] += d['total']
+    data['grand_total'] = data['grand_total']
 
     return data
-
-
-def GetHoursOverDays(period, hours, ts, year, month, available_hours):
-
-    # Round hours to avoid errors due to fractions...
-    hours = round2first(hours)
-
-    # Check if project is HorizonEU
-    horizon = (period.project.agency == "EU-HorizonEu")
-
-    # Days in the month
-    ndays = calendar.monthrange(year, month)[1]
-
-    # Check which days of the month are in the reporting period
-    if period.rp_start < datetime.date(year, month, 1):
-        first_day = 1
-    else:
-        first_day = period.rp_start.day
-    if period.rp_end > datetime.date(year, month, ndays):
-        last_day = ndays
-    else:
-        last_day = period.rp_end.day
-
-    # Initialize days
-    days = [0.0 for d in range(ndays)]
-
-    # Start adding saved hours if any
-    for d in ts:
-        # Add hours
-        days[d.day.day-1] = d.hours
-        # Subtract from available hours
-        available_hours[d.day.day-1] -= d.hours
-        # Subtract from hours
-        hours -= d.hours
-
-    if abs(hours) < 0.001:
-        # Not modified, so we can return
-        # NOTE: if the saved hours match the total hours but are more that the available hours
-        # we will leave the hours negative. This happens when another period is updated with more
-        # hours after first generation. This will require manual correction.
-        return (False, days)
-
-    else:
-        print(hours)
-        # We handle Horizon EU projects separately to enforce the half day minimum reporting quantum
-        if horizon:
-            # Horizon EU project. We work in half days
-            half_days = hours / 3.6   # Number of half days
-            if abs(half_days - round(half_days)) > 0.0:
-                # On horizon EU minimum quantum of reporting is half day, i.e. 3.6 hours
-                raise ReportingError("Project {0:s} is horizon EU but reported hours are not multiple of a half-day".format(period.project.name))
-            half_days = round(half_days)
-
-            if half_days < 0:
-                # We have set more hours than needed. We need to remove hours.
-                while half_days < 0:
-                    av_days = []
-                    try:
-                        # Get day
-                        i = av_days.pop()
-                        assert(days[i] > 0 and abs(days[i] / 3.6 - round(days[i] / 3.6)) < 0.01)
-                        days[i] -= 3.6
-                        half_days += 1
-                        available_hours[i] += 3.6
-
-                    except IndexError:
-                        # We need to restore the day list
-                        av_days = [i for i, d in enumerate(days) if d > 0 and i+1 >= first_day and i+1 <= last_day]
-                        random.shuffle(av_days)
-                        assert(len(av_days))
-
-            else:
-                # We have set less hours than needed. We need to add hours.
-                while half_days > 0:
-                    av_days = []
-                    try:
-                        # Get day
-                        i = av_days.pop()
-                        assert(available_hours[i] > 0 and abs(available_hours[i] / 3.6 - round(available_hours[i] / 3.6)) < 0.01)
-                        days[i] += 3.6
-                        half_days -= 1
-                        available_hours[i] -= 3.6
-
-                    except IndexError:
-                        # We need to restore the day list
-                        av_days = [i for i, d in enumerate(available_hours) if d >= 3.6 and i+1 >= first_day and i+1 <= last_day]
-                        random.shuffle(av_days)
-                        assert(len(av_days))
-        else:
-            # Not horizon
-            if hours < 0:
-                # We have set more hours than needed. We need to remove hours.
-                av_days = [i for i, d in enumerate(days) if d > 0 and i+1 >= first_day and i+1 <= last_day]
-                for i in av_days:
-                    # Check every days to remove spare hours to free half days
-                    if days[i] < 2.0 and days[i] < abs(hours):
-                        available_hours[i] += days[i]
-                        hours += days[i]
-                        days[i] = 0
-
-                    elif days[i] - (3.6 - available_hours[i] % 3.6) > 1.0:
-                        h = round2first(3.6 - available_hours[i] % 3.6)  # Just to be sure not to have rounding errors...
-                        if h > abs(hours):
-                            h = abs(hours)
-                        available_hours[i] += h
-                        days[i] -= h
-                        hours += h
-
-                    if hours == 0:
-                        break
-
-                else:
-                    # We still have some hours to fix
-                    av_days = []
-                    while hours < 0:
-                        try:
-                            i = av_days.pop()
-                            if abs(hours) < days[i] and days[i] - abs(hours) > 1.0:
-                                days[i] -= abs(hours)
-                                available_hours[i] += abs(hours)
-                                hours = 0
-
-                            elif abs(hours) > days[i]:
-                                available_hours[i] += days[i]
-                                hours += days[i]
-                                days[i] = 0
-
-                        except IndexError:
-                            av_days = [i for i, d in enumerate(days) if d > 0]
-                            random.shuffle(av_days)
-                            assert(len(av_days))
-
-            else:
-                # We have set less hours than needed. We need to add hours.
-                av_days = []
-                while hours < 0:
-                    try:
-                        i = av_days.pop()
-                        if available_hours[i] <= 3.6 and available_hours[i] > 1.0:
-                            # We have less than half a day but more that 1.0h
-                            if hours >= available_hours[i]:
-                                if hours - available_hours[i] >= 1.0:
-                                    # More than 1h left
-                                    days[i] += available_hours[i]
-                                    hours -= available_hours[i]
-                                    available_hours[i] = 0
-                                else:
-                                    # Less than 1h left. Not good!
-                                    if available_hours[i] > 2.0:
-                                        h = available_hours[i] - 1.0
-                                        days[i] += h
-                                        hours -= h
-                                        available_hours[i] -= h
-                                    else:
-                                        # No solution. We need to look for another day
-                                        pass
-                            else:
-                                days[i] += hours
-                                available_hours[i] -= hours
-                                hours = 0
-
-                        elif available_hours[i] > 3.6 and available_hours < 7.2:
-                            h = available_hours[i] - 3.6
-                            if h < 2.0:  # We need at least two hours or we get the full amount
-                                h = available_hours[i]
-
-                            if hours >= h:
-                                if hours - h >= 1.0:
-                                    # More that 1h left
-                                    days[i] += h
-                                    available_hours[i] -= h
-                                    hours -= h
-
-                                else:
-                                    # Less than 1h left. Not good!
-                                    if available_hours[i] > 2.0:
-                                        h -= 1.0 # Remove one hour...
-                                        days[i] += h
-                                        hours -= h
-                                        available_hours[i] -= h
-
-                                    else:
-                                        # No solution. We need to look for another day
-                                        pass
-
-                            else:
-                                days[i] += hours
-                                available_hours[i] -= hours
-                                hours = 0
-
-                        elif available_hours[i] >= 7.2:
-                            if hours > 3.6:
-                                days[i] += 3.6
-                                hours -= 3.6
-                                available_hours[i] -= 3.6
-                            else:
-                                h = available_hours[i] - 3.6
-                                days[i] += h
-                                hours -= h
-
-                    except IndexError:
-                        av_days = [i for i, d in enumerate(available_hours) if d > 0 and i+1 >= first_day and i+1 <= last_day]
-                        random.shuffle(av_days)
-                        assert(len(av_days))
-
-        return (True, days)

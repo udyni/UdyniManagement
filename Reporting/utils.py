@@ -180,7 +180,7 @@ def check_bank_holiday(date):
             return False
 
 
-def get_workpackages_fractions(report, total_hours=None):
+def get_workpackages_fractions(report):
     out = []
     total = 0.0
     for wp in report.workpackages.all().order_by('workpackage__name'):
@@ -189,8 +189,7 @@ def get_workpackages_fractions(report, total_hours=None):
     for o in out:
         o['fraction'] /= total
         o['percent'] = o['fraction'] * 100.0
-        if total_hours is not None:
-            o['hours'] = o['fraction'] * total_hours
+        o['hours'] = o['fraction'] * report.hours
     return out
 
 

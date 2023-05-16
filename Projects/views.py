@@ -1,8 +1,8 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.db.models import F
+from django.db.models import F, Subquery
 
-from .models import Researcher, ResearcherRole, Project, WorkPackage
+from .models import Researcher, ResearcherRole, Project, WorkPackage, ConflictOfInterest
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
@@ -279,5 +279,67 @@ class WorkPackageDelete(DeleteViewMenu):
         context = super().get_context_data(**kwargs)
         context['title'] = "Delete work package of project " + str(context['workpackage'].project)
         context['message'] = "Are you sure you want to delete the workpackage {0!s} in project {1!s}?".format(context['workpackage'].name, context['workpackage'].project)
+        context['back_url'] = self.get_success_url()
+        return context
+
+
+# =============================================
+# CONFLICTS OF INTEREST
+#
+class ConflictList(PermissionRequiredMixin, ListViewMenu):
+    model = ConflictOfInterest
+    permission_required = 'Projects.conflict_manage'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Conflicts of interest"
+        return context
+
+
+class ConflictCreate(PermissionRequiredMixin, CreateViewMenu):
+    model = ConflictOfInterest
+    fields = ['researcher', 'director', 'delegate', 'start_date']
+    permission_required = 'Projects.conflict_manage'
+    template_name = "Projects/conflictofinterest_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy('conflicts_view')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Add conflict of interest"
+        context['back_url'] = reverse_lazy('project_view')
+        context['form'].fields['director'].queryset = Researcher.objects.filter(pk__in=Subquery(ResearcherRole.objects.filter(role=ResearcherRole.INSTITUTE_DIRECTOR).values('researcher'))) 
+        return context
+
+
+class ConflictUpdate(PermissionRequiredMixin, UpdateViewMenu):
+    model = ConflictOfInterest
+    fields = ['researcher', 'director', 'delegate', 'start_date']
+    permission_required = 'Projects.conflict_manage'
+    template_name = "Projects/conflictofinterest_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy('conflicts_view')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Modify conflict of interest"
+        context['back_url'] = self.get_success_url()
+        return context
+
+
+class ConflictDelete(PermissionRequiredMixin, DeleteViewMenu):
+    model = ConflictOfInterest
+    permission_required = 'Projects.project_manage'
+    template_name = "UdyniManagement/confirm_delete.html"
+
+    def get_success_url(self):
+        return reverse_lazy('conflicts_view')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Delete conflict of interest"
+        context['message'] = f"Are you sure you want to delete conflict of interest between {context['conflictofinterest'].researcher} and {context['conflictofinterest'].director}?"
         context['back_url'] = self.get_success_url()
         return context

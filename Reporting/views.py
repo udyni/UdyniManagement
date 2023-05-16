@@ -7,7 +7,7 @@ from django.core.exceptions import MultipleObjectsReturned, PermissionDenied, Va
 from django.db.models import Count, Sum, Q, F, Value, ExpressionWrapper, BooleanField
 from django.db.models.functions import ExtractYear, ExtractMonth, Concat, Coalesce
 
-from Projects.models import Project, Researcher, ResearcherRole, WorkPackage
+from Projects.models import Project, Researcher, ResearcherRole, WorkPackage, ConflictOfInterest
 from .models import EpasCode, BankHoliday, PersonnelCost, PresenceData, ReportingPeriod, ReportedWork, ReportedWorkWorkpackage, ReportedMission, TimesheetHours
 
 from .forms import AddReportedMissionForm, EpasCodeUpdateForm, PresenceInputForm, ReportedWorkForm  #, ReportingAddForm
@@ -1035,7 +1035,7 @@ class ReportingAjaxPeriod(PermissionRequiredMixin, View):
                 line.append({'val': ''})
             line.append({'val': tr_month.month_num2en(w.month)})
             line.append({'val': w.hours})
-            line.append({'wps': get_workpackages_fractions(w, w.hours)})
+            line.append({'wps': get_workpackages_fractions(w)})
             line.append({'pk': w.pk})
             data['work'].append(line)
 
@@ -1621,13 +1621,13 @@ class TimeSheetsAjaxGenerate(PermissionRequiredMixin, View):
 
         try:
             data = GetTimesheetData(self.researcher.pk, year, month, generate=True)
-            return JsonResponse({'generated': True, 'error': False, 'ts': data})
+            return JsonResponse({'error': False, 'year': year, 'month': month, 'ts': data})
 
         except ReportingError as e:
-            return JsonResponse({'generated': False, 'error': True, 'message': 'There are inconsistencies in the reported work (Error: {0!s})'.format(e)})
+            return JsonResponse({'error': True, 'year': year, 'month': month, 'message': 'There are inconsistencies in the reported work (Error: {0!s})'.format(e)})
 
         except AssertionError as e:
-            return JsonResponse({'generated': False, 'error': True, 'message': 'Assertion failed: {0!s}'.format(e)})
+            return JsonResponse({'error': True, 'year': year, 'month': month, 'message': 'Assertion failed: {0!s}'.format(e)})
 
     def post(self, request, *args, **kwargs):
         # Kwargs
@@ -1815,47 +1815,30 @@ class TimeSheetsAjaxCheck(PermissionRequiredMixin, View):
         except:
             raise Http404('Invalid year')
 
-        # Work
-        work = (
-            ReportedWork.objects
-            .filter(researcher=researcher, year=year)
-            .values('month')
-            .annotate(count=Count('month'))
-            .order_by('month')
-        )
-        # Missions
-        missions = (
-            ReportedMission.objects
-            .annotate(
-                year=ExtractYear('day__day'),
-                month=ExtractMonth('day__day'),
-            )
-            .filter(Q(day__researcher=researcher) & Q(year=year))
-            .values('month')
-            .annotate(count=Count('month'))
-            .order_by('month')
-        )
-
         out = []
         allgood = True
         for m in range(1, 13, 1):
-            ok = CheckTimesheetData(researcher.pk, year, m)
+            ok, reported, projects = CheckTimesheetData(researcher.pk, year, m)
             if not ok:
                 allgood = False
-            has_work = False
-            has_missions = False
-            for w in work:
-                if w['month'] == m and w['count'] > 0:
-                    has_work = True
-                    break
-            for ms in missions:
-                if ms['month'] == m and ms['count'] > 0:
-                    has_missions = True
-                    break
-            out.append({'month': m, 'ok': ok, 'reported': has_work | has_missions, 'can_generate': can_edit or (can_edit_own and is_self)})
+            out.append({
+                'month': m,
+                'ok': ok,
+                'reported': reported,
+                'can_generate': can_edit or (can_edit_own and is_self),
+                'projects': OrderedDict(sorted(projects.items())),
+            })
+
+        # Create a list of projects with TS
+        projects = {}
+        for o in out:
+            for k, v in o['projects'].items():
+                if k not in projects:
+                    projects[k] = v[1]
 
         context = {
             'researcher': researcher,
+            'projects': OrderedDict(sorted(projects.items())),
             'ts': out,
             'year': year,
             'allgood': allgood,
@@ -1884,69 +1867,48 @@ class TimeSheetsPrint(PermissionRequiredMixin, View):
         except:
             raise Http404('Invalid year')
 
-        # Work
-        work = (
-            ReportedWork.objects
-            .filter(researcher=self.researcher, year=year)
-            .values('month')
-            .annotate(count=Count('month'))
-            .order_by('month')
-        )
-        # Missions
-        missions = (
-            ReportedMission.objects
-            .annotate(
-                year=ExtractYear('day__day'),
-                month=ExtractMonth('day__day'),
-            )
-            .filter(Q(day__researcher=self.researcher) & Q(year=year))
-            .values('month')
-            .annotate(count=Count('month'))
-            .order_by('month')
-        )
-
+        # Get months to report
         try:
             months = [int(request.GET.get('month')), ]
         except:
             months = list(range(1, 13))
 
+        # Get project ID if we are printing individual timesheets
+        try:
+            pid = int(request.GET.get('pid'))
+            project = get_object_or_404(Project, pk=pid)
+        except:
+            project = None
+
         good_months = []
         for month in months:
-            good = False
-            for w in work:
-                if w['month'] == month and w['count'] > 0:
-                    good = True
-                    break
-            for m in missions:
-                if m['month'] == month and m['count'] > 0:
-                    good = True
-                    break
-            if not good:
-                continue
+            ok, reported, projects = CheckTimesheetData(self.researcher.pk, year, month)
 
-            ok = CheckTimesheetData(self.researcher.pk, year, month)
+            # Timesheet is not complete
             if not ok:
-                raise Http404('Timesheet not available. Please generate it.')
-            good_months.append(month)
+                raise Http404(f"Timesheet not available for {tr_month.month_num2en(month)}/{year}. Please generate it.")
+
+            # Add month only if there's something reported
+            if reported and (project is None or project.name in projects):
+                good_months.append(month)
 
         if not len(good_months):
             raise Http404('Nothing to report')
 
-        # Check incompatibilities (TODO: replace with a solution that is not hard-coded)
-        incompatible_rids = []
-        try:
-            a = Researcher.objects.get(name="Michele", surname="Devetta").pk
-            b = Researcher.objects.get(name="Caterina", surname="Vozzi").pk
-            incompatible_rids.append((a, b))
-        except Researcher.DoesNotExist:
-            raise Http404("Cannot find researchers. Contact admin")
-
-        def incompatible(pi_id, rid):
-            for i in incompatible_rids:
-                if pi_id in i and rid in i:
-                    return True
+        # Function to check the incompatibility between a researcher and the director
+        # TODO: what we do when the director and the researcher are the same person?
+        def check_incompatibility(researcher, director, year, month):
+            s = datetime.date(year, month, 1)
+            e = datetime.date(year, month, calendar.monthrange(year, month)[1])
+            q = (
+                ConflictOfInterest.objects
+                .filter(researcher=researcher, director=director)
+                .filter(Q(start_date__lte=e) | (Q(end_date__isnull=True) | Q(end_date__gte=s)))
+            )
+            if len(q):
+                return (str(q[0].delegate), 'Delegate of IFN Director')
             else:
-                return False
+                return (str(director), 'IFN Director')
 
         try:
             context = []
@@ -1970,10 +1932,10 @@ class TimeSheetsPrint(PermissionRequiredMixin, View):
                     current_role = "Researcher"
 
                 # Load timesheet data
-                ts_data = GetTimesheetData(self.researcher.pk, year, month)
+                ts_data = GetTimesheetData(self.researcher.pk, year, month, project)
 
                 # Director
-                q = (
+                director = (
                     ResearcherRole.objects
                     .filter(role=ResearcherRole.INSTITUTE_DIRECTOR)
                     .filter(start_date__lt=datetime.date(year, month, ndays))
@@ -1981,29 +1943,24 @@ class TimeSheetsPrint(PermissionRequiredMixin, View):
                     .first()
                     .researcher
                 )
-                director = "{0!s} (IFN Director)".format(q)
+
+                # Check incompatibilities
+                supervisor_signer = check_incompatibility(self.researcher, director, year, month)
 
                 # Check needed signatures
                 signatures = {}
-                for project in ts_data['projects']:
-                    if 'pi_id' in project:
+                for p in ts_data['projects']:
+                    if 'pi_id' in p:
                         try:
-                            pi = Researcher.objects.get(pk=project['pi_id'])
+                            pi = Researcher.objects.get(pk=p['pi_id'])
                         except Researcher.DoesNotExist:
                             pi = None
 
-                        if pi == self.researcher or pi is None or incompatible(self.researcher.pk, pi.pk):
-                            # director
-                            name = str(director)
-                            if name not in signatures:
-                                signatures[name] = []
-                            signatures[name].append(project['name'])
-
-                        else:
+                        if pi is not None and pi != self.researcher:
                             name = str(pi)
                             if name not in signatures:
                                 signatures[name] = []
-                            signatures[name].append(project['name'])
+                            signatures[name].append(p['name'])
 
                 for k, v in signatures.items():
                     signatures[k] = ", ".join(sorted(v))
@@ -2030,6 +1987,7 @@ class TimeSheetsPrint(PermissionRequiredMixin, View):
                     'month': month,
                     'year': year,
                     'researcher': f"{self.researcher.name} {self.researcher.surname}",
+                    'director': supervisor_signer,
                     'employment': current_role,
                     'beneficiary': "CNR-IFN",
                     'ts': ts_data,
@@ -2041,8 +1999,6 @@ class TimeSheetsPrint(PermissionRequiredMixin, View):
                 return FileResponse(PrintPFDTimesheet(context), as_attachment=True, filename='{0:s}_{1:04d}_{2:02d}.pdf'.format(self.researcher.surname.lower(), year, good_months[0]))
             else:
                 return FileResponse(PrintPFDTimesheet(context), as_attachment=True, filename='{0:s}_{1:04d}.pdf'.format(self.researcher.surname.lower(), year))
-
-            # return FileResponse(PrintPFDTimesheet(context), as_attachment=False, filename='{0:s}_{1:04d}.pdf'.format(researcher.surname.lower(), year))
 
         except Exception as e:
             import traceback
