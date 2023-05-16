@@ -348,7 +348,7 @@ def GetTimesheetData(rid, year, month, project=None, generate=False):
 
         # Store hours (only for working days)
         if p.hours > 0 and p.ts_code is None or p.ts_code == EpasCode.NONE:
-            h = p.hours
+            h = round2first(p.hours)
             data['days'][d]['total'] = h
             available_hours[d] = h
 
