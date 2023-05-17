@@ -3,7 +3,7 @@
 <div class="d-flex flex-column">
   {% if details.work %}
     <div class="table-responsive">
-      <table class="table table-hover table-sm">
+      <table class="table table-hover table-sm table-reporting">
         <thead>
           <th>Month</th>
           {% for period in periods %}
@@ -13,7 +13,9 @@
               <br /><small>To: {{ period.rp_end|date:"M jS, Y" }}</small>
             </th>
           {% endfor %}
-          <th>Total hours</th>
+          <th>Reported hours</th>
+          <th>Usable hours</th>
+          <th>Half days</th>
           <th>Worked hours</th>
         </thead>
         <tbody>
@@ -72,7 +74,7 @@
 
   {% if details.missions %}
     <div class="table-responsive">
-      <table class="table table-hover table-sm">
+      <table class="table table-hover table-sm table-reporting">
         <thead>
           <th>Month</th>
           {% for period in periods %}
