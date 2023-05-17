@@ -10,6 +10,16 @@
     {% for r in researchers %}
       <div class="text"><a href="{% url 'reporting_byresearcher' rid=r.pk %}">{{ r }}</a></div>
     {% endfor %}
+    <div class="dropdown mt-3">
+      <button class="btn btn-primary dropdown-toggle" type="button" id="other_researchers" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Report for a new researcher
+      </button>
+      <div class="dropdown-menu" aria-labelledby="other_researchers">
+        {% for r in other_researchers %}
+        <a class="dropdown-item" href="{% url 'reporting_byresearcher' rid=r.pk %}">{{ r }}</a>
+        {% endfor %}
+      </div>
+    </div>
   </div>
 </div>
 

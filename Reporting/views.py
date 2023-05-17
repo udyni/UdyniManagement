@@ -5,7 +5,7 @@ from django.http import JsonResponse, Http404, FileResponse
 from django.core.exceptions import MultipleObjectsReturned, PermissionDenied, ValidationError
 
 from django.db.models import Count, Sum, Q, F, Value, ExpressionWrapper, BooleanField
-from django.db.models.functions import ExtractYear, ExtractMonth, Concat, Coalesce
+from django.db.models.functions import ExtractYear, ExtractMonth, Concat, Coalesce, Floor, Least
 
 from Projects.models import Project, Researcher, ResearcherRole, WorkPackage, ConflictOfInterest
 from .models import EpasCode, BankHoliday, PersonnelCost, PresenceData, ReportingPeriod, ReportedWork, ReportedWorkWorkpackage, ReportedMission, TimesheetHours
@@ -791,9 +791,25 @@ class ReportingList(PermissionRequiredMixin, TemplateViewMenu):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['projects'] = self.create_reporting_list()
-        rw = Researcher.objects.filter(pk__in=ReportedWork.objects.values('researcher').distinct())
-        rm = Researcher.objects.filter(pk__in=ReportedMission.objects.values('day__researcher').distinct())
-        context['researchers'] = rw.union(rm).order_by('surname', 'name')
+        # Researchers with hours/missions reported
+        rep_reseachers = (
+            Researcher.objects
+            .filter(pk__in=ReportedWork.objects.values('researcher').distinct())
+            .union(
+                Researcher.objects
+                .filter(pk__in=ReportedMission.objects.values('day__researcher').distinct())
+            )
+            .order_by('surname', 'name')
+        )
+        # Other researchers
+        other_researchers = (
+            Researcher.objects
+            .filter(~Q(pk__in=rep_reseachers.values('pk')))
+            .order_by('surname', 'name')
+        )
+
+        context['researchers'] = rep_reseachers
+        context['other_researchers'] = other_researchers
         context['title'] = "Reporting"
         return context
 
@@ -1121,6 +1137,8 @@ class ReportingAjaxYear(PermissionRequiredMixin, View):
             .annotate(
                 year=ExtractYear('day'),
                 month=ExtractMonth('day'),
+                hd=Floor(F('hours') / Value(3.6)),
+                uh=Least(F('hours'), Value(7.2)),
             )
             .filter(year=year)
             .order_by('day')
@@ -1128,6 +1146,8 @@ class ReportingAjaxYear(PermissionRequiredMixin, View):
             .annotate(
                 tot_hours=Coalesce(Sum('hours', filter=Q(code__ts_code=EpasCode.NONE) | Q(code__isnull=True)), Value(0.0)),
                 missions=Count('code', filter=Q(code__ts_code=EpasCode.MISSION)),
+                half_days=Coalesce(Sum('hd', filter=Q(code__ts_code=EpasCode.NONE) | Q(code__isnull=True)), Value(0.0)),
+                usable_hours=Coalesce(Sum('uh', filter=Q(code__ts_code=EpasCode.NONE) | Q(code__isnull=True)), Value(0.0))
             )
             .order_by('month')
         )
@@ -1144,8 +1164,8 @@ class ReportingAjaxYear(PermissionRequiredMixin, View):
                 else:
                     line.append({})
             line_m = copy.deepcopy(line)
-            line += [{'hours': 0.0}, {'hours': 0.0}, ]
-            line_m += [{'value': 0}, {'value': 0}, ]
+            line += [{'value': "0.0"}, {'value': "0.0"}, {'value': "0.0"}, {'value': "0.0"}]
+            line_m += [{'value': "0"}, {'value': "0"}, ]
             data['work'].append(line)
             data['missions'].append(line_m)
 
@@ -1163,12 +1183,14 @@ class ReportingAjaxYear(PermissionRequiredMixin, View):
 
         # Totals by month
         for i, t in enumerate(total_by_month):
-            data['work'][i][-2]['hours'] = t
+            data['work'][i][-4]['value'] = f"{t:.1f}"
 
         # Total worked hours by month and total missions
         for p in presences:
-            data['work'][p['month'] - 1][-1]['hours'] = p['tot_hours']
-            data['missions'][p['month'] - 1][-1]['value'] = p['missions']
+            data['work'][p['month'] - 1][-3]['value'] = f"{p['usable_hours']:.1f}"
+            data['work'][p['month'] - 1][-2]['value'] = f"{int(p['half_days']):d} ({int(p['half_days']) * 3.6:.1f})"
+            data['work'][p['month'] - 1][-1]['value'] = f"{p['tot_hours']:.1f}"
+            data['missions'][p['month'] - 1][-1]['value'] = f"{p['missions']:d}"
 
         totals = []
         totals.append('Totals')

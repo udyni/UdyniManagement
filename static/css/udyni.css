@@ -116,3 +116,7 @@ table.timesheet td.editable-cell {
 table.timesheet td.modified {
   background-color: aquamarine !important;
 }
+
+table.table-reporting {
+  font-size: 10pt;
+}
