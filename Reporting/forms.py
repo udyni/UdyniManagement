@@ -2,7 +2,6 @@ import re
 import pandas as pd
 
 from django import forms
-from django.db.models import CharField
 from django.db.models import Q, F, Value
 from django.db.models.functions import Concat
 from django.core.exceptions import ValidationError
@@ -72,37 +71,23 @@ class ReportedWorkForm(forms.ModelForm):
         model = ReportedWork
         fields = ['hours', ]
 
-    def __init__(self, researcher, period, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        researcher = kwargs.pop('researcher')
+        period = kwargs.pop('period')
+        year = kwargs.pop('year', None)
+        month = kwargs.pop('month', None)
+        available_months = kwargs.pop('available_months', [])
+
+        # Call parent constructor
         super().__init__(*args, **kwargs)
 
         # If the instance does not have a PK we are inserting a new item
         if not self.instance.pk:
-            # Months that already have work reported
-            work = (
-                ReportedWork.objects
-                .filter(researcher=researcher, period=period)
-                .order_by('year', 'month')
-                .annotate(year_month=Concat(F('year'), Value("_"), F('month'), output_field=CharField()))
-                .values_list('year_month')
-            )
-            already_reported = [w[0] for w in work]
-
-            # Available months
-            year_month = []
-            for y in range(period.rp_start.year, period.rp_end.year + 1):
-                if y == period.rp_start.year:
-                    if y == period.rp_end.year:
-                        year_month += [("{0:d}_{1:d}".format(y, m), "{1:s} {0:d}".format(y, tr_month.month_num2en(m))) for m in range(period.rp_start.month, period.rp_end.month + 1)]
-                    else:
-                        year_month += [("{0:d}_{1:d}".format(y, m), "{1:s} {0:d}".format(y, tr_month.month_num2en(m))) for m in range(period.rp_start.month, 13)]
-
-                elif y == period.rp_end.year:
-                    year_month += [("{0:d}_{1:d}".format(y, m), "{1:s} {0:d}".format(y, tr_month.month_num2en(m))) for m in range(1, period.rp_end.month + 1)]
-                else:
-                    year_month += [("{0:d}_{1:d}".format(y, m), "{1:s} {0:d}".format(y, tr_month.month_num2en(m))) for m in range(1, 13)]
-
-            self.year_month_choices = list(filter(lambda x: x[0] not in already_reported, year_month))
+            self.year_month_choices = available_months
             self.fields['year_month'] = forms.ChoiceField(choices=self.year_month_choices)
+
+            if year is not None and month is not None:
+                self.fields['year_month'].initial = f"{year}_{month}"
 
             # Add researcher and period to the model instance
             self.instance.researcher = researcher
