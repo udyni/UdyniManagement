@@ -4,7 +4,8 @@ from django.urls import reverse, reverse_lazy
 from django.http import JsonResponse, Http404, FileResponse
 from django.core.exceptions import MultipleObjectsReturned, PermissionDenied, ValidationError
 
-from django.db.models import Count, Sum, Q, F, Value, ExpressionWrapper, BooleanField
+from django.db.models import Count, Sum, Q, F, Value, ExpressionWrapper, BooleanField, CharField
+
 from django.db.models.functions import ExtractYear, ExtractMonth, Concat, Coalesce, Floor, Least
 
 from Projects.models import Project, Researcher, ResearcherRole, WorkPackage, ConflictOfInterest
@@ -1160,7 +1161,7 @@ class ReportingAjaxYear(PermissionRequiredMixin, View):
             for i, p in enumerate(periods):
                 is_own = is_self or (p.project.pi is not None and p.project.pi.username == self.request.user)
                 if self.check_month_in_period(year, j+1, p):
-                    line.append({'ppk': p.pk, 'can_edit': can_edit or (can_edit_own and is_own)})
+                    line.append({'ppk': p.pk, 'month': j+1, 'can_edit': can_edit or (can_edit_own and is_own)})
                 else:
                     line.append({})
             line_m = copy.deepcopy(line)
@@ -1243,6 +1244,39 @@ class ReportingAddWork(PermissionRequiredMixin, CreateViewMenu):  # name='report
                 return True
         return False
 
+    def available_months(self):
+        # Months that already have work reported
+        already_reported = (
+            ReportedWork.objects
+            .filter(researcher=self.researcher, period=self.period)
+            .order_by('year', 'month')
+            .annotate(year_month=Concat(F('year'), Value("_"), F('month'), output_field=CharField()))
+            .values_list('year_month', flat=True)
+        )
+
+        # Available months
+        year_month = []
+        for y in range(self.period.rp_start.year, self.period.rp_end.year + 1):
+            if y == self.period.rp_start.year:
+                if y == self.period.rp_end.year:
+                    year_month += [(f"{y:d}_{m:d}", f"{tr_month.month_num2en(m)} {y:d}") for m in range(self.period.rp_start.month, self.period.rp_end.month + 1)]
+                else:
+                    year_month += [(f"{y:d}_{m:d}", f"{tr_month.month_num2en(m)} {y:d}") for m in range(self.period.rp_start.month, 13)]
+
+            elif y == self.period.rp_end.year:
+                year_month += [(f"{y:d}_{m:d}", f"{tr_month.month_num2en(m)} {y:d}") for m in range(1, self.period.rp_end.month + 1)]
+            else:
+                year_month += [(f"{y:d}_{m:d}", f"{tr_month.month_num2en(m)} {y:d}") for m in range(1, 13)]
+
+        # Return filtered list
+        return list(filter(lambda x: x[0] not in already_reported, year_month))
+
+    def get(self, request, *args, **kwargs):
+        if not len(self.available_months()):
+            # Redirect back if there's no available period (TODO: should be improved, maybe when switching to AJAX forms)
+            return redirect(self.get_success_url())
+        return super().get(request, *args, **kwargs)
+
     def get_success_url(self):
         url_params = []
         if 'by' in self.request.GET:
@@ -1262,6 +1296,13 @@ class ReportingAddWork(PermissionRequiredMixin, CreateViewMenu):  # name='report
         kwargs = super().get_form_kwargs()
         kwargs['researcher'] = self.researcher
         kwargs['period'] = self.period
+        kwargs['available_months'] = self.available_months()
+        if self.request.GET['by'].lower() == 'year':
+            try:
+                kwargs['year'] = int(self.request.GET['selected'])
+                kwargs['month'] = int(self.request.GET['month'])
+            except:
+                pass
         return kwargs
 
     def get_context_data(self, **kwargs):

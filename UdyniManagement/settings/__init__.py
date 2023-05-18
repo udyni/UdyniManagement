@@ -18,7 +18,7 @@ from django_auth_ldap.config import LDAPSearch, PosixGroupType
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -194,9 +194,9 @@ DATE_INPUT_FORMATS = ['%d/%m/%Y', '%Y-%m-%d']
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'http_static')
+STATIC_ROOT = BASE_DIR / 'http_static'
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
+    BASE_DIR / 'static',
 )
 
 # Default primary key field type
