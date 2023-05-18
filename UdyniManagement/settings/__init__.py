@@ -23,9 +23,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '********** TO BE REPLACED **********'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -41,6 +38,7 @@ INSTALLED_APPS = [
     'Projects.apps.ProjectsConfig',
     'Accounting.apps.AccountingConfig',
     'Tags.apps.TagsConfig',
+    'sigla.apps.SiglaConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -199,7 +197,6 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'http_static')
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'root'),
 )
 
 # Default primary key field type
@@ -224,10 +221,3 @@ SERVER_EMAIL = 'UDynI Management <no-reply@udyni.lab>'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.udyni.lab'
 EMAIL_PORT = 25
-
-# Email configuration (smtp-relay.sendinblue.com)
-# EMAIL_USE_TLS = True
-# EMAIL_HOST = 'smtp-relay.sendinblue.com'
-# EMAIL_PORT = 587
-# EMAIL_HOST_USER = 'udynilabs@gmail.com'
-# EMAIL_HOST_PASSWORD = '********'
