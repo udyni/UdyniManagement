@@ -42,7 +42,7 @@
                         {% elif cell.ppk %}
                           <div class="ml-auto mr-4">
                             {% if cell.can_edit %}
-                              <a title="Add hours" href="{% url 'reporting_add_work' rid=researcher.pk pid=cell.ppk %}?origin=byresearcher&by=year&selected={{ year }}" aria-label="Delete"><i class="fas fa-circle-plus" aria-hidden="true"></i></a>
+                              <a title="Add hours" href="{% url 'reporting_add_work' rid=researcher.pk pid=cell.ppk %}?origin=byresearcher&by=year&selected={{ year }}&month={{ cell.month }}" aria-label="Delete"><i class="fas fa-circle-plus" aria-hidden="true"></i></a>
                             {% endif %}
                           </div>
                         {% endif %}
