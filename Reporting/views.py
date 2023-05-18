@@ -1164,8 +1164,8 @@ class ReportingAjaxYear(PermissionRequiredMixin, View):
                 else:
                     line.append({})
             line_m = copy.deepcopy(line)
-            line += [{'value': "0.0"}, {'value': "0.0"}, {'value': "0.0"}, {'value': "0.0"}]
-            line_m += [{'value': "0"}, {'value': "0"}, ]
+            line += [{'value': 0.0}, {'value': 0.0}, {'value': 0.0}, {'value': 0.0}]
+            line_m += [{'value': 0}, {'value': 0}, ]
             data['work'].append(line)
             data['missions'].append(line_m)
 
