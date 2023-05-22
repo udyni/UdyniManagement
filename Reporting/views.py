@@ -682,7 +682,7 @@ class ReportingDelete(PermissionRequiredMixin, DeleteViewMenu):
                 context['reportingperiod'].rp_end,
                 context['reportingperiod'].project.name,
         ]
-        context['message'] = "Are you sure you want to delete the reporting period from {0!s} to {1!s} for the project {3!s}?".format(*values)
+        context['message'] = "Are you sure you want to delete the reporting period from {0!s} to {1!s} for the project {2!s}?".format(*values)
         context['back_url'] = self.get_success_url()
         return context
 
