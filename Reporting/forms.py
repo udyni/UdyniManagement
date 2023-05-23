@@ -158,7 +158,7 @@ class ReportedWorkForm(forms.ModelForm):
                 rwp.save()
                 saved_pks.append(rwp.pk)
             # Delete reported WP that are not included in the save
-            ReportedWorkWorkpackage.objects.filter(Q(report=self.instance) & ~Q(workpackage__pk__in=saved_pks)).delete()
+            ReportedWorkWorkpackage.objects.filter(Q(report=self.instance) & ~Q(pk__in=saved_pks)).delete()
         return instance
 
 
