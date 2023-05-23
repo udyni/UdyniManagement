@@ -132,27 +132,33 @@ class ReportedWorkForm(forms.ModelForm):
                 if v != "":
                     wp_name = m.groups()[0]
                     try:
-                        wp = WorkPackage.objects.get(Q(project=self.instance.period.project) & Q(name__iexact=wp_name))
-                        try:
-                            new_rp = ReportedWorkWorkpackage.objects.get(report=self.instance, workpackage=wp)
-                        except ReportedWorkWorkpackage.DoesNotExist:
-                            new_rp = ReportedWorkWorkpackage()
-                            new_rp.workpackage = wp
-                        new_rp.fraction = float(v)
-                        self.reported_workpackages.append(new_rp)
+                        fraction = float(v)
+                        if fraction > 0.0:
+                            wp = WorkPackage.objects.get(Q(project=self.instance.period.project) & Q(name__iexact=wp_name))
+                            try:
+                                new_rp = ReportedWorkWorkpackage.objects.get(report=self.instance, workpackage=wp)
+                            except ReportedWorkWorkpackage.DoesNotExist:
+                                new_rp = ReportedWorkWorkpackage()
+                                new_rp.workpackage = wp
+                            new_rp.fraction = fraction
+                            self.reported_workpackages.append(new_rp)
                     except WorkPackage.DoesNotExist:
-                        ValidationError({k: 'Could not find the corresponding workpackage'})
+                        raise ValidationError({k: 'Could not find the corresponding workpackage'})
                     except (TypeError, ValueError):
-                        ValidationError({k: 'Invalid fraction specified for workpackage'})
+                        raise ValidationError({k: 'Invalid fraction specified for workpackage'})
         return data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         if commit:
             instance.save()
+            saved_pks = []
             for rwp in self.reported_workpackages:
                 rwp.report = instance
                 rwp.save()
+                saved_pks.append(rwp.pk)
+            # Delete reported WP that are not included in the save
+            ReportedWorkWorkpackage.objects.filter(Q(report=self.instance) & ~Q(workpackage__pk__in=saved_pks)).delete()
         return instance
 
 
