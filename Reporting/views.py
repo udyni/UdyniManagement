@@ -1,6 +1,7 @@
 from typing import OrderedDict
+import logging
 from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 from django.http import JsonResponse, Http404, FileResponse
 from django.core.exceptions import MultipleObjectsReturned, PermissionDenied, ValidationError
 
@@ -23,8 +24,10 @@ from .print import PrintPFDTimesheet
 from Tags.templatetags import tr_month
 
 from django.views import View
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from UdyniManagement.menu import UdyniMenu
 from UdyniManagement.views import TemplateViewMenu, ListViewMenu, CreateViewMenu, UpdateViewMenu, DeleteViewMenu
+from UdyniManagement.views import AjaxPermissionRequiredMixin, ObjectValidationMixin
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
@@ -1207,7 +1210,7 @@ class ReportingAjaxYear(PermissionRequiredMixin, View):
             is_own = is_self or (m.period.project.pi is not None and m.period.project.pi.username == self.request.user)
             if 'missions' not in data['missions'][m.month - 1][periods_pk.index(m.period.pk) + 1]:
                 data['missions'][m.month - 1][periods_pk.index(m.period.pk) + 1]['missions'] = []
-            data['missions'][m.month - 1][periods_pk.index(m.period.pk) + 1]['missions'].append({'pk': m.pk, 'day': m.day.day, 'can_edit': can_edit or (can_edit_own and is_own)})
+            data['missions'][m.month - 1][periods_pk.index(m.period.pk) + 1]['missions'].append({'pk': m.pk, 'day': m.day.day, 'wp': m.workpackage, 'can_edit': can_edit or (can_edit_own and is_own)})
             data['missions'][m.month - 1][-2]['value'] += 1
 
         context = {
@@ -1227,14 +1230,16 @@ class ReportingAjaxYear(PermissionRequiredMixin, View):
             return False
 
 
-class ReportingAddWork(PermissionRequiredMixin, CreateViewMenu):  # name='reporting_add_work'  <int:rid>
+class ReportingAddWork(ObjectValidationMixin, AjaxPermissionRequiredMixin, CreateView):
     model = ReportedWork
     form_class = ReportedWorkForm
-    template_name = 'UdyniManagement/generic_form.html'
+    template_name = 'UdyniManagement/ajax_form.html'
+    input_objects = {
+        'researcher': {'class': Researcher, 'pk': 'rid'},
+        'period': {'class': ReportingPeriod, 'pk': 'pid'},
+    }
 
     def has_permission(self):
-        self.researcher = get_object_or_404(Researcher, pk=self.kwargs['rid'])
-        self.period = get_object_or_404(ReportingPeriod, pk=self.kwargs['pid'])
         if self.request.user.has_perm('Reporting.rp_work_manage'):
             return True
         if self.request.user.has_perm('Reporting.rp_work_manage_own'):
@@ -1273,53 +1278,45 @@ class ReportingAddWork(PermissionRequiredMixin, CreateViewMenu):  # name='report
 
     def get(self, request, *args, **kwargs):
         if not len(self.available_months()):
-            # Redirect back if there's no available period (TODO: should be improved, maybe when switching to AJAX forms)
-            return redirect(self.get_success_url())
+            # Return error if there's no available period
+            rsp = JsonResponse(data={'status': 'error', 'message': f"No available months to report"})
+            rsp.status_code = 400
+            return rsp
         return super().get(request, *args, **kwargs)
-
-    def get_success_url(self):
-        url_params = []
-        if 'by' in self.request.GET:
-            if self.request.GET['by'].lower() in ['project', 'year']:
-                url_params.append("by={0:s}".format(self.request.GET['by'].lower()))
-        if 'selected' in self.request.GET:
-            try:
-                url_params.append("selected={0:d}".format(int(self.request.GET['selected'])))
-            except:
-                pass
-        url = reverse('reporting_byresearcher', kwargs={'rid': self.kwargs['rid']})
-        if len(url_params):
-            url += "?" + "&".join(url_params)
-        return url
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['researcher'] = self.researcher
         kwargs['period'] = self.period
         kwargs['available_months'] = self.available_months()
-        if self.request.GET['by'].lower() == 'year':
+        if 'year' in self.request.GET and 'month' in self.request.GET:
             try:
-                kwargs['year'] = int(self.request.GET['selected'])
+                kwargs['year'] = int(self.request.GET['year'])
                 kwargs['month'] = int(self.request.GET['month'])
             except:
                 pass
         return kwargs
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = "Add reported work for {0!s} on project {1:s}".format(self.researcher, self.period.project.name)
-        context['back_url'] = self.get_success_url()
-        return context
+    def form_valid(self, form):
+        try:
+            self.object = form.save()
+            return JsonResponse(data={'status': 'ok', 'year': self.object.year})
+        except Exception as e:
+            rsp = JsonResponse(data={'status': 'error', 'message': f"Failed to add reported work (Error: {e})"})
+            rsp.status_code = 500
+            return rsp
 
 
-class ReportingAddMission(PermissionRequiredMixin, CreateViewMenu):  # name='reporting_add_mission'  <int:rid>
+class ReportingAddMission(ObjectValidationMixin, AjaxPermissionRequiredMixin, CreateView):
     model = ReportedMission
     form_class = AddReportedMissionForm
-    template_name = 'UdyniManagement/generic_form.html'
+    template_name = 'UdyniManagement/ajax_form.html'
+    input_objects = {
+        'researcher': {'class': Researcher, 'pk': 'rid'},
+        'period': {'class': ReportingPeriod, 'pk': 'pid'},
+    }
 
     def has_permission(self):
-        self.researcher = get_object_or_404(Researcher, pk=self.kwargs['rid'])
-        self.period = get_object_or_404(ReportingPeriod, pk=self.kwargs['pid'])
         if self.request.user.has_perm('Reporting.rp_work_manage'):
             return True
         if self.request.user.has_perm('Reporting.rp_work_manage_own'):
@@ -1329,40 +1326,35 @@ class ReportingAddMission(PermissionRequiredMixin, CreateViewMenu):  # name='rep
                 return True
         return False
 
-    def get_success_url(self):
-        url_params = []
-        if 'by' in self.request.GET:
-            if self.request.GET['by'].lower() in ['project', 'year']:
-                url_params.append("by={0:s}".format(self.request.GET['by'].lower()))
-        if 'selected' in self.request.GET:
-            try:
-                url_params.append("selected={0:d}".format(int(self.request.GET['selected'])))
-            except:
-                pass
-        url = reverse('reporting_byresearcher', kwargs={'rid': self.kwargs['rid']})
-        if len(url_params):
-            url += "?" + "&".join(url_params)
-        return url
-
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['researcher'] = self.researcher
         kwargs['period'] = self.period
+        try:
+            kwargs['year'] = int(self.request.GET['year'])
+        except:
+            pass
         return kwargs
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = "Add reported mission for {0!s} on project {1:s}".format(self.researcher, self.period.project.name)
-        context['back_url'] = self.get_success_url()
-        return context
+    def form_valid(self, form):
+        try:
+            self.object = form.save()
+            return JsonResponse(data={'status': 'ok', 'year': self.object.day.day.year})
+        except Exception as e:
+            rsp = JsonResponse(data={'status': 'error', 'message': f"Failed to add reported mission (Error: {e})"})
+            rsp.status_code = 500
+            return rsp
 
 
-class ReportingModWork(PermissionRequiredMixin, UpdateViewMenu):  # name='reporting_mod_work'  <int:rid> <int:wid>
+class ReportingModWork(ObjectValidationMixin, AjaxPermissionRequiredMixin, UpdateView):
     model = ReportedWork
     pk_url_kwarg = 'wid'
     form_class = ReportedWorkForm
-    template_name = 'UdyniManagement/generic_form.html'
+    template_name = 'UdyniManagement/ajax_form.html'
     only_own = False
+    input_objects = {
+        'researcher': {'class': Researcher, 'pk': 'rid'},
+    }
 
     def has_permission(self):
         if self.request.user.has_perm('Reporting.rp_work_manage'):
@@ -1377,21 +1369,6 @@ class ReportingModWork(PermissionRequiredMixin, UpdateViewMenu):  # name='report
         if self.only_own and obj.period.project.pi is not None and obj.period.project.pi.username != self.request.user and obj.researcher.username != self.request.user:
             raise PermissionDenied('You do not have permission to edit this report')
         return obj
-
-    def get_success_url(self):
-        url_params = []
-        if 'by' in self.request.GET:
-            if self.request.GET['by'].lower() in ['project', 'year']:
-                url_params.append("by={0:s}".format(self.request.GET['by'].lower()))
-        if 'selected' in self.request.GET:
-            try:
-                url_params.append("selected={0:d}".format(int(self.request.GET['selected'])))
-            except:
-                pass
-        url = reverse('reporting_byresearcher', kwargs={'rid': self.kwargs['rid']})
-        if len(url_params):
-            url += "?" + "&".join(url_params)
-        return url
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -1399,21 +1376,24 @@ class ReportingModWork(PermissionRequiredMixin, UpdateViewMenu):  # name='report
         kwargs['period'] = None
         return kwargs
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        researcher = get_object_or_404(Researcher, pk=self.kwargs['rid'])
-        if researcher != context['reportedwork'].researcher:
-            raise Http404
-        context['title'] = "Edit work on project {0:s} for {1!s}".format(context['reportedwork'].period.project.name, researcher)
-        context['back_url'] = self.get_success_url()
-        return context
+    def form_valid(self, form):
+        try:
+            self.object = form.save()
+            return JsonResponse(data={'status': 'ok', 'year': self.object.year})
+        except Exception as e:
+            rsp = JsonResponse(data={'status': 'error', 'message': f"Failed to modify reported work (Error: {e})"})
+            rsp.status_code = 500
+            return rsp
 
 
-class ReportingDelWork(PermissionRequiredMixin, DeleteViewMenu):  # name='reporting_del_work'  <int:rid> <int:wid>
+class ReportingDelWork(ObjectValidationMixin, AjaxPermissionRequiredMixin, DeleteView):
     model = ReportedWork
     pk_url_kwarg = 'wid'
-    template_name = 'UdyniManagement/confirm_delete.html'
+    template_name = 'UdyniManagement/ajax_form.html'
     only_own = False
+    input_objects = {
+        'researcher': {'class': Researcher, 'pk': 'rid'},
+    }
 
     def has_permission(self):
         if self.request.user.has_perm('Reporting.rp_work_manage'):
@@ -1429,40 +1409,29 @@ class ReportingDelWork(PermissionRequiredMixin, DeleteViewMenu):  # name='report
             raise PermissionDenied('You do not have permission to edit this report')
         return obj
 
-    def get_success_url(self):
-        url_params = []
-        if 'by' in self.request.GET:
-            if self.request.GET['by'].lower() in ['project', 'year']:
-                url_params.append("by={0:s}".format(self.request.GET['by'].lower()))
-        if 'selected' in self.request.GET:
-            try:
-                url_params.append("selected={0:d}".format(int(self.request.GET['selected'])))
-            except:
-                pass
-        url = reverse('reporting_byresearcher', kwargs={'rid': self.kwargs['rid']})
-        if len(url_params):
-            url += "?" + "&".join(url_params)
-        return url
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = "Delete reported work for {0!s}".format(context['reportedwork'].researcher)
-        context['back_url'] = self.get_success_url()
-        values = [
-            context['reportedwork'].month,
-            context['reportedwork'].year,
-            context['reportedwork'].period.project.name,
-        ]
-        context['message'] = "Are you sure you want to delete work for month {0:d}/{1:d} on project {2:s}?".format(*values)
-        return context
+    def delete(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            y = self.object.year
+            self.object.delete()
+            return JsonResponse(data={'status': 'ok', 'year': y})
+        except Exception as e:
+            log = logging.getLogger('django')
+            log.exception(f"Failed to delete reported work (Error: {e})")
+            rsp = JsonResponse(data={'status': 'error', 'message': f"Failed to delete reported work (Error: {e})"})
+            rsp.status_code = 500
+            return rsp
 
 
-class ReportingModMission(PermissionRequiredMixin, UpdateViewMenu):  # name='reporting_mod_mission'   <int:rid> <int:mid>
+class ReportingModMission(ObjectValidationMixin, AjaxPermissionRequiredMixin, UpdateView):
     model = ReportedMission
     pk_url_kwarg = 'mid'
     fields = ['workpackage', ]
-    template_name = 'UdyniManagement/generic_form.html'
+    template_name = 'UdyniManagement/ajax_form.html'
     only_own = False
+    input_objects = {
+        'researcher': {'class': Researcher, 'pk': 'rid'},
+    }
 
     def has_permission(self):
         if self.request.user.has_perm('Reporting.rp_work_manage'):
@@ -1478,42 +1447,30 @@ class ReportingModMission(PermissionRequiredMixin, UpdateViewMenu):  # name='rep
             raise PermissionDenied('You do not have permission to edit this report')
         return obj
 
-    def get_success_url(self):
-        url_params = []
-        if 'by' in self.request.GET:
-            if self.request.GET['by'].lower() in ['project', 'year']:
-                url_params.append("by={0:s}".format(self.request.GET['by'].lower()))
-        if 'selected' in self.request.GET:
-            try:
-                url_params.append("selected={0:d}".format(int(self.request.GET['selected'])))
-            except:
-                pass
-        url = reverse('reporting_byresearcher', kwargs={'rid': self.kwargs['rid']})
-        if len(url_params):
-            url += "?" + "&".join(url_params)
-        return url
+    def get_form(self, *args):
+        form = super().get_form(*args)
+        wps = WorkPackage.objects.filter(project=self.object.period.project)
+        form.fields['workpackage'].queryset = wps
+        return form
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        researcher = get_object_or_404(Researcher, pk=self.kwargs['rid'])
-        if researcher != context['reportedmission'].day.researcher:
-            raise Http404
-        values = [
-            context['reportedmission'].day.day,
-            context['reportedmission'].period.project.name,
-            researcher,
-        ]
-        context['title'] = "Modify mission on {0!s} for project {1:s} by {2!s}".format(*values)
-        context['back_url'] = self.get_success_url()
-        context['form'].fields['workpackage'].queryset = context['reportedmission'].period.project.workpackage_set
-        return context
+    def form_valid(self, form):
+        try:
+            self.object = form.save()
+            return JsonResponse(data={'status': 'ok', 'year': self.object.day.day.year})
+        except Exception as e:
+            rsp = JsonResponse(data={'status': 'error', 'message': f"Failed to modify reported mission (Error: {e})"})
+            rsp.status_code = 500
+            return rsp
 
 
-class ReportingDelMission(PermissionRequiredMixin, DeleteViewMenu):  # name='reporting_del_mission'  <int:rid> <int:mid>
+class ReportingDelMission(ObjectValidationMixin, AjaxPermissionRequiredMixin, DeleteView):
     model = ReportedMission
     pk_url_kwarg = 'mid'
-    template_name = 'UdyniManagement/confirm_delete.html'
+    template_name = 'UdyniManagement/ajax_form.html'
     only_own = False
+    input_objects = {
+        'researcher': {'class': Researcher, 'pk': 'rid'},
+    }
 
     def has_permission(self):
         if self.request.user.has_perm('Reporting.rp_work_manage'):
@@ -1529,31 +1486,18 @@ class ReportingDelMission(PermissionRequiredMixin, DeleteViewMenu):  # name='rep
             raise PermissionDenied('You do not have permission to edit this report')
         return obj
 
-    def get_success_url(self):
-        url_params = []
-        if 'by' in self.request.GET:
-            if self.request.GET['by'].lower() in ['project', 'year']:
-                url_params.append("by={0:s}".format(self.request.GET['by'].lower()))
-        if 'selected' in self.request.GET:
-            try:
-                url_params.append("selected={0:d}".format(int(self.request.GET['selected'])))
-            except:
-                pass
-        url = reverse('reporting_byresearcher', kwargs={'rid': self.kwargs['rid']})
-        if len(url_params):
-            url += "?" + "&".join(url_params)
-        return url
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = "Delete reported mission for {0!s}".format(context['reportedmission'].day.researcher)
-        context['back_url'] = self.get_success_url()
-        values = [
-            context['reportedmission'].day.day,
-            context['reportedmission'].period.project.name,
-        ]
-        context['message'] = "Are you sure you want to delete mission on {0!s} on project {1:s}?".format(*values)
-        return context
+    def delete(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            y = self.object.day.day.year
+            self.object.delete()
+            return JsonResponse(data={'status': 'ok', 'year': y})
+        except Exception as e:
+            log = logging.getLogger('django')
+            log.exception(f"Failed to delete reported work (Error: {e})")
+            rsp = JsonResponse(data={'status': 'error', 'message': f"Failed to delete reported mission (Error: {e})"})
+            rsp.status_code = 500
+            return rsp
 
 
 # =============================================

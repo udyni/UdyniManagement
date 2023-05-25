@@ -34,15 +34,15 @@ urlpatterns = [
 
     path('reporting/', views.ReportingList.as_view(), name='reporting_list'),
     path('reporting/byresearcher/<int:rid>/', views.ReportingByResearcher.as_view(), name='reporting_byresearcher'),
-    path('reporting/byresearcher/<int:rid>/<int:pid>/add_work', views.ReportingAddWork.as_view(), name='reporting_add_work'),
-    path('reporting/byresearcher/<int:rid>/<int:pid>/add_mission', views.ReportingAddMission.as_view(), name='reporting_add_mission'),
-    path('reporting/byresearcher/<int:rid>/work/<int:wid>/modify', views.ReportingModWork.as_view(), name='reporting_mod_work'),
-    path('reporting/byresearcher/<int:rid>/work/<int:wid>/delete', views.ReportingDelWork.as_view(), name='reporting_del_work'),
-    path('reporting/byresearcher/<int:rid>/mission/<int:mid>/modify', views.ReportingModMission.as_view(), name='reporting_mod_mission'),
-    path('reporting/byresearcher/<int:rid>/mission/<int:mid>/delete', views.ReportingDelMission.as_view(), name='reporting_del_mission'),
 
     path('reporting/ajax/period', views.ReportingAjaxPeriod.as_view(), name="reporting_ajax_period"),
     path('reporting/ajax/year', views.ReportingAjaxYear.as_view(), name="reporting_ajax_year"),
+    path('reporting/ajax/byresearcher/<int:rid>/<int:pid>/add_work', views.ReportingAddWork.as_view(), name='reporting_add_work'),
+    path('reporting/ajax/byresearcher/<int:rid>/<int:pid>/add_mission', views.ReportingAddMission.as_view(), name='reporting_add_mission'),
+    path('reporting/ajax/byresearcher/<int:rid>/work/<int:wid>/modify', views.ReportingModWork.as_view(), name='reporting_mod_work'),
+    path('reporting/ajax/byresearcher/<int:rid>/work/<int:wid>/delete', views.ReportingDelWork.as_view(), name='reporting_del_work'),
+    path('reporting/ajax/byresearcher/<int:rid>/mission/<int:mid>/modify', views.ReportingModMission.as_view(), name='reporting_mod_mission'),
+    path('reporting/ajax/byresearcher/<int:rid>/mission/<int:mid>/delete', views.ReportingDelMission.as_view(), name='reporting_del_mission'),
 
     path('timesheets/', views.TimeSheetsView.as_view(), name='timesheets_view'),
     path('timesheets/<int:rid>/<int:year>/generate', views.TimeSheetsGenerate.as_view(), name='timesheets_generate'),
