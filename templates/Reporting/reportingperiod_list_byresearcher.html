@@ -3,6 +3,8 @@
 {% load tr_month %}
 {% block content %}
 
+{% include "UdyniManagement/ajax_form_dialog.html" %}
+
 <a href="{% url 'reporting_list' %}" class="btn btn-primary btn-icon-split mb-4" aria-label="Back">
   <span class="icon text-white-50">
     <i class="fa-solid fa-circle-arrow-left"></i>
@@ -100,6 +102,15 @@ var loaded_periods = []
 var loaded_years = []
 
 $(document).ready(function() {
+  $("#reporting_byproject").click(function() {
+    const url = window.location.origin + window.location.pathname + "?by=project";
+    window.history.pushState('by project',"", url);
+  });
+  $("#reporting_byyear").click(function() {
+    const url = window.location.origin + window.location.pathname + "?by=year";
+    window.history.pushState('by year',"", url);
+  });
+
   $("div[id^='detail_']").on('show.bs.collapse', function(e) {
     let id = e.target.id;
 
@@ -128,6 +139,32 @@ $(document).ready(function() {
     }
   });
 
+  function load_year(year, destination) {
+    // Fetch data
+    $.get( "{% url 'reporting_ajax_year' %}?rid={{ view.kwargs.rid }}&year="+year, function(data) {
+      // Show content
+      destination.html(data);
+      // Update link handlers
+      $("a.ajax-form").off("click").click(function(event) {
+        event.preventDefault();
+        handle_ajax_form({
+          'action': $(this).prop('href'),
+          'title': $(this).prop('title'),
+          'submit': $(this).prop('title') == 'Delete' ? 'Yes, delete!' : 'Save',
+          'success_action': reload_year_upon_save,
+        });
+      });
+    })
+    .fail(function(jqXhr, textStatus) {
+      destination.html('<div role="alert" class="alert alert-danger">[Error ' + jqXhr.status + ']</div>');
+    });
+  }
+
+  function reload_year_upon_save(data) {
+    y = data.year;
+    load_year(y, $("div[id='year_" + y + "']"));
+  }
+
   $("div[id^='year_']").on('show.bs.collapse', function(e) {
     let id = e.target.id;
 
@@ -138,33 +175,12 @@ $(document).ready(function() {
         // Period already loaded, skip
         return;
       }
-
-      // Get root to display loaded data
-      let root = $(this);
-
-      // Fetch data
-      $.get( "{% url 'reporting_ajax_year' %}?rid={{ view.kwargs.rid }}&year="+y, function(data) {
-          console.log(root);
-          // Show content
-          root.html(data);
-          // Store ID
-          loaded_years.push(y);
-        })
-        .fail(function(jqXhr, textStatus) {
-          root.html('<div role="alert" class="alert alert-danger">[Error ' + jqXhr.status + ']</div>');
-        });
+      // Load data
+      load_year(y, $(this));
+      // Store year
+      loaded_years.push(y);
     }
   });
-
-  {% if selected %}
-    {% if by == 'year' %}
-      $('#year_{{ selected }}').addClass('show');
-      $('#year_{{ selected }}').trigger('show');
-    {% else %}
-      $('#detail_{{ selected }}').addClass('show');
-      $('#detail_{{ selected }}').trigger('show');
-    {% endif %}
-  {% endif %}
 });
 
 </script>

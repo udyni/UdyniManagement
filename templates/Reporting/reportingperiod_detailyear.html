@@ -35,14 +35,14 @@
                               <a title="View workpackages" data-toggle="collapse" href="#wps_{{ cell.pk }}" aria-label="Workpackages" role="button" aria-expanded="false" aria-controls="wps_{{ cell.pk }}"><i class="fas fa-circle-arrow-down" aria-hidden="true"></i></a>
                             {% endif %}
                             {% if cell.can_edit %}
-                              <a title="Modify" href="{% url 'reporting_mod_work' rid=researcher.pk wid=cell.pk %}?origin=byresearcher&by=year&selected={{ year }}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
-                              <a title="Delete" href="{% url 'reporting_del_work' rid=researcher.pk wid=cell.pk %}?origin=byresearcher&by=year&selected={{ year }}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
+                              <a class="ajax-form" title="Modify" href="{% url 'reporting_mod_work' rid=researcher.pk wid=cell.pk %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
+                              <a class="ajax-form" title="Delete" href="{% url 'reporting_del_work' rid=researcher.pk wid=cell.pk %}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
                             {% endif %}
                           </div>
                         {% elif cell.ppk %}
                           <div class="ml-auto mr-4">
                             {% if cell.can_edit %}
-                              <a title="Add hours" href="{% url 'reporting_add_work' rid=researcher.pk pid=cell.ppk %}?origin=byresearcher&by=year&selected={{ year }}&month={{ cell.month }}" aria-label="Delete"><i class="fas fa-circle-plus" aria-hidden="true"></i></a>
+                              <a class="ajax-form" title="Add hours" href="{% url 'reporting_add_work' rid=researcher.pk pid=cell.ppk %}?year={{ year }}&month={{ cell.month }}" aria-label="Add hours"><i class="fas fa-circle-plus" aria-hidden="true"></i></a>
                             {% endif %}
                           </div>
                         {% endif %}
@@ -79,7 +79,7 @@
           <th>Month</th>
           {% for period in periods %}
             <th class="">
-              {{ period.project.name }}{% if period.can_edit %}<a class="pl-2" title="Add mission" href="{% url 'reporting_add_mission' rid=researcher.pk pid=period.pk %}?origin=byresearcher&by=year&selected={{ year }}" aria-label="Modify"><i class="fas fa-circle-plus" aria-hidden="true"></i></a>{% endif %}
+              {{ period.project.name }}{% if period.can_edit %}<a class="ajax-form pl-2" title="Add mission" href="{% url 'reporting_add_mission' rid=researcher.pk pid=period.pk %}?year={{ year }}" aria-label="Modify"><i class="fas fa-circle-plus" aria-hidden="true"></i></a>{% endif %}
               <br /><small>From: {{ period.rp_start|date:"M jS, Y" }}</small>
               <br /><small>To: {{ period.rp_end|date:"M jS, Y" }}</small>
             </th>
@@ -100,9 +100,11 @@
                         <div class="d-flex flex-row">
                           <div class="text"><small>{{ mission.day | date:"M jS" }}</small></div>
                           <div class="ml-auto mr-4">
-                            {% if cell.can_edit %}
-                              <a title="Modify" href="{% url 'reporting_mod_mission' rid=researcher.pk mid=mission.pk %}?origin=byresearcher&by=year&selected={{ year }}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
-                              <a title="Delete" href="{% url 'reporting_del_mission' rid=researcher.pk mid=mission.pk %}?origin=byresearcher&by=year&selected={{ year }}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
+                            {% if mission.can_edit %}
+                              {% if mission.wp %}
+                                <a class="ajax-form" title="Modify" href="{% url 'reporting_mod_mission' rid=researcher.pk mid=mission.pk %}?year={{ year }}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
+                              {% endif %}
+                              <a class="ajax-form" title="Delete" href="{% url 'reporting_del_mission' rid=researcher.pk mid=mission.pk %}?year={{ year }}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
                             {% endif %}
                           </div>
                         </div>
