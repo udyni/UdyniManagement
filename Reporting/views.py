@@ -1640,6 +1640,7 @@ class TimeSheetsAjaxGenerate(PermissionRequiredMixin, View):
         # Kwargs
         year = self.kwargs['year']
         month = self.kwargs['month']
+        log = logging.getLogger('diango')
 
         # Decode json data submitted
         try:
@@ -1718,7 +1719,7 @@ class TimeSheetsAjaxGenerate(PermissionRequiredMixin, View):
 
                 for d, h in v.items():
                     day = datetime.date(year, month, int(d) + 1)
-                    print("Saving workpackage {0:d}, day {1!s}".format(wid, day))
+                    log.info(f"Saving workpackage {wp}, day {day}")
                     used_days |= Q(day=day)
                     try:
                         ts = (
@@ -1746,16 +1747,25 @@ class TimeSheetsAjaxGenerate(PermissionRequiredMixin, View):
                                 )
                             )
                         except ReportedWork.DoesNotExist:
-                            return JsonResponse({'saveok': False, 'error': "Cannot find corresponding reported work for project ID {0:d}, day {1!s}".format(wp.project.pk, day)})
+                            msg = f"Cannot find corresponding reported work for project {wp.project.name} (ID: {wp.project.pk}), day {day}"
+                            log.exception(msg)
+                            return JsonResponse({'saveok': False, 'error': msg})
                         except MultipleObjectsReturned:
-                            return JsonResponse({'saveok': False, 'error': "Found more than one corresponding reported work for project ID {0:d}, day {1!s}".format(wp.project.pk, day)})
+                            msg = f"Found more than one corresponding reported work for project {wp.project.name} (ID: {wp.project.pk}), day {day}"
+                            log.exception(msg)
+                            return JsonResponse({'saveok': False, 'error': msg})
+
                         # Get report WP
                         try:
                             report_wp = ReportedWorkWorkpackage.objects.get(report=report, workpackage=wp)
                         except ReportedWork.DoesNotExist:
-                            return JsonResponse({'saveok': False, 'error': "Cannot find corresponding reported work for workpackage ID {0:d}, day {1!s}".format(wid, day)})
+                            msg = f"Cannot find corresponding reported work for workpackage {wp.name} (ID: {wp.pk}) of project {wp.project.name} (ID: {wp.project.name}), day {day}"
+                            log.exception(msg)
+                            return JsonResponse({'saveok': False, 'error': msg})
                         except MultipleObjectsReturned:
-                            return JsonResponse({'saveok': False, 'error': "Found more than one corresponding reported work for workpackage ID {0:d}, day {1!s}".format(wid, day)})
+                            msg = f"Found more than one corresponding reported work for workpackage {wp.name} (ID: {wp.pk}) of project {wp.project.name} (ID: {wp.project.name}), day {day}"
+                            log.exception(msg)
+                            return JsonResponse({'saveok': False, 'error': msg})
 
                         ts = TimesheetHours()
                         ts.report = report
@@ -1765,7 +1775,9 @@ class TimeSheetsAjaxGenerate(PermissionRequiredMixin, View):
                         ts.save()
 
                     except MultipleObjectsReturned:
-                        return JsonResponse({'saveok': False, 'error': "Got multiple elements for workpackage ID {0:d}, day {1!s}".format(wid, day)})
+                        msg = f"Got multiple elements for workpackage ID {wid}, day {day}"
+                        log.exception(msg)
+                        return JsonResponse({'saveok': False, 'error': msg})
 
                 # Delete old unused days from TimesheetHours
                 (
@@ -1784,11 +1796,14 @@ class TimeSheetsAjaxGenerate(PermissionRequiredMixin, View):
                     .delete()
                 )
 
-        except json.JSONDecodeError as e:
-            return JsonResponse({'saveok': False, 'error': str(e)})
+        except json.JSONDecodeError:
+            msg = "Failed to decode JSON submitted"
+            log.exception(msg)
+            return JsonResponse({'saveok': False, 'error': msg})
 
         except ValueError as e:
-            print(d)
+            log.exception(f"Failed to convert number")
+            # Forward exception after logging
             raise e
 
         # Save successful
