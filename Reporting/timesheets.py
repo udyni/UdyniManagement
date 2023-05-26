@@ -192,7 +192,7 @@ def CheckTimesheetData(rid, year, month):
                     break
         else:
             ts = f[0]
-            if ts['total_hours'] != w.hours:
+            if abs(ts['total_hours'] - w.hours) > 0.01:
                 projects_good[pname][0] = False
                 all_good = False
 
@@ -226,7 +226,7 @@ def CheckTimesheetData(rid, year, month):
     # If any day has more hours reported that worked, we return false but cannot link the error to a specific project
     for day in worked_and_reported_hours:
         # We need to approximate worked hours to one decimal digit
-        if round2first(day.ts_hours) > round2first(day.hours):
+        if abs(round2first(day.hours) - round2first(day.ts_hours)) < -0.01:
             all_good = False
 
     # Check missions

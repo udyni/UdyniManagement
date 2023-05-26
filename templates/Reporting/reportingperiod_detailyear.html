@@ -51,7 +51,7 @@
                         <div class="collapse" id="wps_{{ cell.pk }}">
                           <div class="d-flex flex-column">
                             {% for wp in cell.wps %}
-                              <div class="text"><small>{{ wp.wp }}: {{ wp.fraction|floatformat:-1}}&percnt;</small></div>
+                              <div class="text"><small>{{ wp.wp }}: {{ wp.percent|floatformat:-1}}&percnt;</small></div>
                             {% endfor %}
                           </div>
                         </div>
