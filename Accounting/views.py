@@ -871,7 +871,7 @@ class SplitImpegniAjax(PermissionRequiredMixin, View):
         # Check that all the selected objects has not been added yet
         for im in impegni:
             if SplitImpegno.objects.filter(impegno=im).count() > 0:
-                response['errors'].append("{0:d}_{1:d}".format(im.esercizio_orig, im.numero))
+                response['errors'].append(f"Impegno with PK {im.pk} already reported (numero: {im.numero:d}, esericio orig. {im.esercizio_orig:d}, {im.description})")
 
         if not len(response['errors']):
             for im in impegni:
@@ -918,7 +918,6 @@ class SplitImpegniDelete(PermissionRequiredMixin, DeleteViewMenu):
                 Q(impegno__numero=numero)
             )
         )
-        print(obj)
         return obj
 
     def get_success_url(self):
