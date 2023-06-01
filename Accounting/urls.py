@@ -27,7 +27,7 @@ urlpatterns = [
     path('split/<int:pk>/del', views.SplitAccountingDelete.as_view(), name='acc_split_contab_del'),
     path('split/<int:pk>/impegni/add', views.SplitImpegniAdd.as_view(), name='acc_split_impegni_add'),
     path('split/<int:pk>/impegni/del', views.SplitImpegniDelete.as_view(), name='acc_split_impegni_del'),
-    path('split/variazioni/add/<str:gae>', views.SplitVariazioniAdd.as_view(), name='acc_split_var_add'),
+    path('split/variazioni/add/<int:gae>', views.SplitVariazioniAdd.as_view(), name='acc_split_var_add'),
     path('split/variazioni/<int:vpk>/mod', views.SplitVariazioniUpdate.as_view(), name='acc_split_var_mod'),
     path('split/variazioni/<int:vpk>/del', views.SplitVariazioniDelete.as_view(), name='acc_split_var_del'),
 
