@@ -306,6 +306,8 @@ def PrintPFDTimesheet(contextes):
         researcher_signature_style = TableStyle([
             ('SPAN', (0,0), (1,0)),
             ('BACKGROUND', (0,0), (1,0), (230/255.0, 230/255.0, 240/255.0)),
+            # NOTE: added line for date because we disabled the automatic signature date
+            ('LINEBELOW', (-1, -2), (-1, -2), 0.5, (135/255.0, 138/255.0, 158/255.0)),
             ('LINEBELOW', (-1, -1), (-1, -1), 0.5, (135/255.0, 138/255.0, 158/255.0)),
             ('VALIGN',(0,0),(1,0),'MIDDLE'),
             ('VALIGN',(0,1),(0,-1),'BOTTOM'),
@@ -347,7 +349,9 @@ def PrintPFDTimesheet(contextes):
             [Paragraph('Name:', style=stylesheet['SignatureLabel']),
              Paragraph(context['researcher'], style=stylesheet['Signature'])],
             [Paragraph('Date:', style=stylesheet['SignatureLabel']),
-             Paragraph(sign_day, style=stylesheet['Signature'])],
+             # NOTE: removed automatic sign day because does not work well when producing timesheets month by month
+             #Paragraph(sign_day, style=stylesheet['Signature'])],
+             ''],
             [Paragraph('Signature:', style=stylesheet['SignatureLabel']),
              ''],
         ]

@@ -853,36 +853,34 @@ class SplitImpegniAjax(PermissionRequiredMixin, View):
         return False
 
     def post(self, request, *args, **kwargs):
+        # Init response
+        response = {'result': 'ok', 'errors': []}
+
         # Cycle over post data and get all selected 'impegni'
-        filter = Q()
         for k, v in request.POST.items():
             m = re.match("^(\d+)_(\d+)$", k)
             if m is not None:
                 es = int(m.groups()[0])
                 im = int(m.groups()[1])
-                filter |= (Q(esercizio_orig=es) & Q(numero=im))
+                try:
 
-        # Find all the matching objects
-        impegni = Impegno.objects.filter(filter)
+                    # Find all the matching objects
+                    impegni = Impegno.objects.filter(Q(esercizio_orig=es) & Q(numero=im))
 
-        # Init response
-        response = {'result': None, 'errors': []}
-
-        # Check that all the selected objects has not been added yet
-        for im in impegni:
-            if SplitImpegno.objects.filter(impegno=im).count() > 0:
-                response['errors'].append(f"Impegno with PK {im.pk} already reported (numero: {im.numero:d}, esericio orig. {im.esercizio_orig:d}, {im.description})")
-
-        if not len(response['errors']):
-            for im in impegni:
-                sp = SplitImpegno()
-                sp.contab = self.contab
-                sp.impegno = im
-                sp.save()
-                response['result'] = 'ok'
-
-        else:
-            response['result'] = 'fail'
+                    # Add impegni
+                    for im in impegni:
+                        # NOTE: if an 'impegno' span over multiple 'esercizi' it may be alredy partially added
+                        try:
+                            sim = SplitImpegno.objects.get(impegno=im)
+                        except SplitImpegno.DoesNotExist:
+                            sim = SplitImpegno()
+                            sim.contab = self.contab
+                            sim.impegno = im
+                            sim.save()
+                except Exception as e:
+                    # Failed to select and add impegni
+                    response['result'] = 'fail'
+                    response['errors'].append(f"Failed to add impegno {im} for esercizio {es} (Error: {e})")
 
         return JsonResponse(data=response)
 
@@ -961,7 +959,7 @@ class SplitVariazioniAdd(PermissionRequiredMixin, CreateViewMenu):
     #     return VoceSpesa.objects.filter(pk__in=q.distinct()).order_by('voce')
 
     def get_context_data(self, **kwargs):
-        gae = get_object_or_404(GAE, name=self.kwargs['gae'])
+        gae = get_object_or_404(GAE, pk=self.kwargs['gae'])
         context = super().get_context_data(**kwargs)
         context['title'] = "Add 'variazione' to splitted accounting on GAE {0:s}".format(gae.name)
         context['back_url'] = self.get_success_url()
