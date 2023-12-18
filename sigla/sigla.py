@@ -353,7 +353,7 @@ class SIGLA(object):
         s = time.time()
         fatture = []
         # First retrieve pg_docamm from ConsMandatoRigaAction.json
-        data = s.postRequest('ConsMandatoRigaAction.json', filters=[('pg_mandato', mandato), ('esercizio', esercizio), ], esercizio=esercizio)
+        data = self.postRequest('ConsMandatoRigaAction.json', filters=[('pg_mandato', mandato), ('esercizio', esercizio), ], esercizio=esercizio)
         if len(data):
             for el in data:
                 obj = {
