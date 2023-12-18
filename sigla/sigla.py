@@ -365,7 +365,7 @@ class SIGLA(object):
                     'importo': el['im_mandato_riga'],
                 }
                 if el['cd_tipo_documento_amm'] == 'FATTURA_P':
-                    df = s.postRequest('ConsFatturaPassivaAction.json', filters=[('pgFatturaPassiva', el['pg_doc_amm']), ('cdUnitaOrganizzativa', self.getCdu()), ('esercizio', esercizio), ], esercizio=esercizio)
+                    df = self.postRequest('ConsFatturaPassivaAction.json', filters=[('pgFatturaPassiva', el['pg_doc_amm']), ('cdUnitaOrganizzativa', self.getCdu()), ('esercizio', esercizio), ], esercizio=esercizio)
                     obj['pg_fattura'] = df[0]['pgFatturaPassiva']
                     obj['nr_fattura'] = df[0]['nrFatturaFornitore']
                     obj['dt_fattura'] = df[0]['dtFatturaFornitore']
