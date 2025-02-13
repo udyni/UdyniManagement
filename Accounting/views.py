@@ -511,7 +511,30 @@ class GAEAjaxMandati(PermissionRequiredMixin, View):
         mandati = Mandato.objects.filter(impegno=impegno).order_by(
             'date').values('numero', 'importo', 'terzo', 'id_terzo')
         return JsonResponse(mandati)
+    
 
+class GAEAjaxDettagliMandato(PermissionRequiredMixin, View):
+    permission_required = 'Accounting.gae_view'
+    http_method_names = ['get', ]
+    only_own_gae = False
+
+    def has_permission(self):
+        p = super().has_permission()
+        if not p and self.request.user.has_perm('Accounting.gae_view_own'):
+            self.only_own_gae = True
+            return True
+        return p
+
+    def get(self, request, *args, **kwargs):
+        # Get mandato
+        mandato = get_object_or_404(Mandato, pk=self.kwargs['mandato'])
+
+        # Check GAE
+        if self.only_own_gae and mandato.impegno.gae.project.pi.username != request.user:
+            self.handle_no_permission()
+
+        # TODO: Extract fatture
+        return JsonResponse()
 
 # ============================================
 # Split accounting
