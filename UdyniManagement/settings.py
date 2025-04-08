@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'Projects.apps.ProjectsConfig',
     'Accounting.apps.AccountingConfig',
     'Tags.apps.TagsConfig',
+    'LabLogbook.apps.LablogbookConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
