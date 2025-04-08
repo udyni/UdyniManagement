@@ -153,5 +153,5 @@ cython_debug/
 #.idea/
 
 # migrations content except __init__ shoudn't be in the GitHub repo
-**/migrations/*.py
+**/migrations/*
 !**/migrations/__init__.py
