@@ -74,7 +74,7 @@ class SampleForExperiment(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.PROTECT)
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["experiment", "sample"], name="unique_experiment_sample")
+            models.UniqueConstraint(fields=["experiment", "sample"], name="%(app_label)s_%(class)s_unique")
         ]
 
 
