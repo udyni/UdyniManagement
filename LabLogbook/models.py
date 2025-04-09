@@ -54,14 +54,12 @@ class Experiment(models.Model):
     experimental_station = models.ForeignKey(ExperimentalStation, on_delete=models.PROTECT)
     description = models.TextField()
     status = models.CharField(max_length=10, choices=POSSIBLE_STATUSES)
+    samples = models.ManyToManyField(Sample, through='SampleForExperiment')
 
 
 class SampleForExperiment(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     sample = models.ForeignKey(Sample, on_delete=models.PROTECT)
-
-    class Meta:
-        unique_together = ("experiment", "sample")
 
 
 class Measurement(models.Model):
