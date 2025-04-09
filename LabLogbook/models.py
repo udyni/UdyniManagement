@@ -10,6 +10,9 @@ class Laboratory(models.Model):
     description = models.TextField()
     location = models.CharField(max_length=255)
 
+    def __str__(self):
+        return f"{self.name}: {self.location}"
+
 
 class ExperimentalStation(models.Model):
     POSSIBLE_STATUSES = [
@@ -25,6 +28,9 @@ class ExperimentalStation(models.Model):
     laboratory = models.ForeignKey(Laboratory, on_delete=models.CASCADE)
     status = models.CharField(max_length=17, choices=POSSIBLE_STATUSES)
 
+    def __str__(self):
+        return f"{self.name}, status: {self.status}"
+
 
 class Sample(models.Model):
     sample_id = models.AutoField(primary_key=True)
@@ -35,6 +41,9 @@ class Sample(models.Model):
     material = models.CharField(max_length=255)
     substrate = models.CharField(max_length=255)
     description = models.TextField()
+
+    def __str__(self):
+        return f"{self.name}"
 
 
 class Experiment(models.Model):
@@ -56,6 +65,9 @@ class Experiment(models.Model):
     status = models.CharField(max_length=10, choices=POSSIBLE_STATUSES)
     samples = models.ManyToManyField(Sample, through="SampleForExperiment")
 
+    def __str__(self):
+        return f"{self.experiment_id}, creation time: {self.creation_time.isoformat()}"
+
 
 class SampleForExperiment(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
@@ -73,11 +85,17 @@ class Measurement(models.Model):
     end_time = models.DateTimeField()
     sample = models.ForeignKey(Sample, on_delete=models.PROTECT)
 
+    def __str__(self):
+        return f"{self.measurement_id}, start time: {self.start_time.isoformat()}, end time: {self.end_time.isoformat()}"
+
 
 class File(models.Model):
     file_id = models.AutoField(primary_key=True)
     measurement = models.ForeignKey(Measurement, on_delete=models.PROTECT)
     path = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"File at: {self.path}"
 
 
 class Comment(models.Model):
@@ -92,6 +110,8 @@ class Comment(models.Model):
     type = models.CharField(max_length=12, choices=COMMENT_TYPES)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
 
+    def __str__(self):
+        return f"Comment {self.comment_id} for experiment: {self.experiment}, reply to: {self.parent}"
 
 class CommentContent(models.Model):
     comment_content_id = models.AutoField(primary_key=True)
@@ -101,6 +121,8 @@ class CommentContent(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     text = models.TextField(null=True)
 
+    def __str__(self):
+        return f"Content for comment: {self.comment}, version: {self.version}, timestamp: {self.timestamp.isoformat()}"
 
 # For future versions of the application
 class Attachment(models.Model):
@@ -111,3 +133,6 @@ class Attachment(models.Model):
     deleted = models.BooleanField(default=False)
     mimetype = models.CharField(max_length=255)
     path = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"Attachment for comment: {self.comment}, timestamp: {self.timestamp.isoformat}"
