@@ -46,11 +46,11 @@ class ExperimentalStation(models.Model):
 class Sample(models.Model):
     sample_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    manifacturer = models.CharField(max_length=255)
-    reference = models.CharField(max_length=255)
     material = models.CharField(max_length=255)
     substrate = models.CharField(max_length=255)
+    manifacturer = models.CharField(max_length=255)
     description = models.TextField()
+    reference = models.CharField(max_length=255)
     author = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
 
     class Meta:
