@@ -10,6 +10,16 @@ class Laboratory(models.Model):
     description = models.TextField()
     location = models.CharField(max_length=255)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['name'], name="%(app_label)s_%(class)s_unique"),
+        ]
+        default_permissions = ()
+        permissions = [
+            ('laboratory_view', 'View list of laboratories'),
+            ('laboratory_manage', 'Manage list of laboratories'),
+        ]
+
     def __str__(self):
         return f"{self.name}: {self.location}"
 
