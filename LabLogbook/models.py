@@ -11,6 +11,7 @@ class Laboratory(models.Model):
     location = models.CharField(max_length=255)
 
     class Meta:
+        ordering = ["name"]
         constraints = [
             models.UniqueConstraint(fields=['name'], name="%(app_label)s_%(class)s_unique"),
         ]
