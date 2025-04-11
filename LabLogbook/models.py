@@ -46,15 +46,26 @@ class ExperimentalStation(models.Model):
 class Sample(models.Model):
     sample_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    author = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
     manifacturer = models.CharField(max_length=255)
     reference = models.CharField(max_length=255)
     material = models.CharField(max_length=255)
     substrate = models.CharField(max_length=255)
     description = models.TextField()
+    author = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
 
+    class Meta:
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(fields=['name'], name="%(app_label)s_%(class)s_unique"),
+        ]
+        default_permissions = ()
+        permissions = [
+            ('sample_view', 'View list of samples'),
+            ('sample_manage', 'Manage list of samples'),
+        ]
+    
     def __str__(self):
-        return f"{self.name}"
+        return f'{self.name}'
 
 
 class Experiment(models.Model):
