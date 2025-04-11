@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 
-from .models import Laboratory
+from .models import Laboratory, Sample
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
@@ -68,5 +68,67 @@ class LaboratoryDelete(PermissionRequiredMixin, DeleteViewMenu):
         context = super().get_context_data(**kwargs)
         context['title'] = "Delete laboratory"
         context['message'] = "Are you sure you want to delete the laboratory: {0!s}?".format(context['laboratory'])
+        context['back_url'] = self.get_success_url()
+        return context
+
+
+# =============================================
+# SAMPLE
+#
+class SampleList(PermissionRequiredMixin, ListViewMenu):
+    model = Sample
+    permission_required = 'Sample.sample_view'
+
+    def get_queryset(self):
+        return Sample.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Samples"
+        context['can_edit'] = self.request.user.has_perm('Sample.sample_manage')
+        return context
+
+class SampleCreate(PermissionRequiredMixin, CreateViewMenu):
+    model = Sample
+    fields = ['name', 'material', 'substrate', 'manifacturer', 'description', 'reference', 'author']
+    permission_required = 'Sample.sample_manage'
+    template_name = "UdyniManagement/generic_form.html"
+    
+    def get_success_url(self):
+        return reverse_lazy('sample_view')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Add new sample"
+        context['back_url'] = self.get_success_url()
+        return context
+
+class SampleUpdate(PermissionRequiredMixin, UpdateViewMenu):
+    model = Sample
+    fields = ['name', 'material', 'substrate', 'manifacturer', 'description', 'reference', 'author']
+    permission_required = 'Sample.sample_manage'
+    template_name = "UdyniManagement/generic_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy('sample_view')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Modify sample"
+        context['back_url'] = self.get_success_url()
+        return context
+
+class SampleDelete(PermissionRequiredMixin, DeleteViewMenu):
+    model = Sample
+    permission_required = 'Sample.sample_manage'
+    template_name = "UdyniManagement/confirm_delete.html"
+
+    def get_success_url(self):
+        return reverse_lazy('sample_view')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Delete sample"
+        context['message'] = "Are you sure you want to delete the sample: {0!s}?".format(context['sample'])
         context['back_url'] = self.get_success_url()
         return context
