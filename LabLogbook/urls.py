@@ -16,6 +16,11 @@ urlpatterns = [
     path('samples/add', views.SampleCreate.as_view(), name='sample_add'),
     path('samples/<int:pk>/modify', views.SampleUpdate.as_view(), name='sample_mod'),
     path('samples/<int:pk>/delete', views.SampleDelete.as_view(), name='sample_del'),
+
+    path('experimentalstations/', views.ExperimentalStationList.as_view(), name='experimentalstation_view'),
+    path('experimentalstations/add', views.ExperimentalStationCreate.as_view(), name='experimentalstation_add'),
+    path('experimentalstations/<int:pk>/modify', views.ExperimentalStationUpdate.as_view(), name='experimentalstation_mod'),
+    path('experimentalstations/<int:pk>/delete', views.ExperimentalStationDelete.as_view(), name='experimentalstation_del'),
 ]
 
 menu = {
@@ -28,12 +33,11 @@ menu = {
             'link': reverse_lazy('laboratory_view'),
             'permissions': ['Laboratory.laboratory_view',],
         },
-        # TODO
-        # {
-        #     'name': 'Experimental Stations',
-        #     'link': reverse_lazy('experimentalstation_view'),
-        #     'permissions': [],
-        # },
+        {
+            'name': 'Experimental Stations',
+            'link': reverse_lazy('experimentalstation_view'),
+            'permissions': [],
+        },
         {
             'name': 'Samples',
             'link': reverse_lazy('sample_view'),
