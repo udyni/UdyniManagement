@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 
-from .models import Laboratory, Sample
+from .models import Laboratory, Sample, ExperimentalStation
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
@@ -130,5 +130,67 @@ class SampleDelete(PermissionRequiredMixin, DeleteViewMenu):
         context = super().get_context_data(**kwargs)
         context['title'] = "Delete sample"
         context['message'] = "Are you sure you want to delete the sample: {0!s}?".format(context['sample'])
+        context['back_url'] = self.get_success_url()
+        return context
+    
+
+# =============================================
+# SAMPLE
+#
+class ExperimentalStationList(PermissionRequiredMixin, ListViewMenu):
+    model = ExperimentalStation
+    permission_required = 'ExperimentalStation.experimentalstation_view'
+
+    def get_queryset(self):
+        return ExperimentalStation.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Experimental Stations"
+        context['can_edit'] = self.request.user.has_perm('ExperimentalStation.experimentalstation_manage')
+        return context
+
+class ExperimentalStationCreate(PermissionRequiredMixin, CreateViewMenu):
+    model = ExperimentalStation
+    fields = ['laboratory', 'name', 'description', 'responsible', 'status']
+    permission_required = 'ExperimentalStation.experimentalstation_manage'
+    template_name = "UdyniManagement/generic_form.html"
+    
+    def get_success_url(self):
+        return reverse_lazy('experimentalstation_view')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Add new experimental station"
+        context['back_url'] = self.get_success_url()
+        return context
+
+class ExperimentalStationUpdate(PermissionRequiredMixin, UpdateViewMenu):
+    model = ExperimentalStation
+    fields = ['name', 'description', 'responsible', 'status']
+    permission_required = 'ExperimentalStation.experimentalstation_manage'
+    template_name = "UdyniManagement/generic_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy('experimentalstation_view')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = f"Modify experimental station in lab " + str(context["experimentalstation"].laboratory)
+        context['back_url'] = self.get_success_url()
+        return context
+
+class ExperimentalStationDelete(PermissionRequiredMixin, DeleteViewMenu):
+    model = ExperimentalStation
+    permission_required = 'ExperimentalStation.experimentalstation_manage'
+    template_name = "UdyniManagement/confirm_delete.html"
+
+    def get_success_url(self):
+        return reverse_lazy('experimentalstation_view')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Delete experimental station"
+        context['message'] = "Are you sure you want to delete the experimental station '{0!s}' in lab '{1!s}'?".format(context["experimentalstation"].name, context["experimentalstation"].laboratory)
         context['back_url'] = self.get_success_url()
         return context
