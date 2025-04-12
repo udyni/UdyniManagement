@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from Projects.models import Project
 
 UserModel = get_user_model()
@@ -25,24 +26,6 @@ class Laboratory(models.Model):
         return f"{self.name}: {self.location}"
 
 
-class ExperimentalStation(models.Model):
-    POSSIBLE_STATUSES = [
-        ("AVAILABLE", "Available"),
-        ("TEMP_UNAVAILABLE", "Temporary Unavailable"),
-        ("DISMISSED", "Dismissed"),
-    ]
-
-    station_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    responsible = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
-    description = models.TextField()
-    laboratory = models.ForeignKey(Laboratory, on_delete=models.CASCADE)
-    status = models.CharField(max_length=17, choices=POSSIBLE_STATUSES)
-
-    def __str__(self):
-        return f"{self.name}, status: {self.status}"
-
-
 class Sample(models.Model):
     sample_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
@@ -66,6 +49,35 @@ class Sample(models.Model):
     
     def __str__(self):
         return f'{self.name}'
+
+
+class ExperimentalStation(models.Model):
+    POSSIBLE_STATUSES = [
+        ("AVAILABLE", "Available"),
+        ("TEMP_UNAVAILABLE", "Temporary Unavailable"),
+        ("DISMISSED", "Dismissed"),
+    ]
+
+    station_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    responsible = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
+    description = models.TextField()
+    laboratory = models.ForeignKey(Laboratory, on_delete=models.CASCADE)
+    status = models.CharField(max_length=17, choices=POSSIBLE_STATUSES)
+
+    class Meta:
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(fields=['name'], name="%(app_label)s_%(class)s_unique"),
+        ]
+        default_permissions = ()
+        permissions = [
+            ('experimentalstation_view', 'View list of experimental stations'),
+            ('experimentalstation_manage', 'Manage list of experimental stations'),
+        ]
+
+    def __str__(self):
+        return f"{self.name}, status: {self.status}"
 
 
 class Experiment(models.Model):
