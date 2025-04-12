@@ -66,7 +66,7 @@ class ExperimentalStation(models.Model):
     status = models.CharField(max_length=17, choices=POSSIBLE_STATUSES)
 
     class Meta:
-        ordering = ['name']
+        ordering = ['laboratory', 'name']
         constraints = [
             models.UniqueConstraint(fields=['name'], name="%(app_label)s_%(class)s_unique"),
         ]
