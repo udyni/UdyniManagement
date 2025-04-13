@@ -1,7 +1,9 @@
+from Projects.models import Project
+
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from Projects.models import Project
+
 
 UserModel = get_user_model()
 
