@@ -90,7 +90,7 @@ class SampleList(PermissionRequiredMixin, ListViewMenu):
 
 class SampleCreate(PermissionRequiredMixin, CreateViewMenu):
     model = Sample
-    fields = ['name', 'material', 'substrate', 'manifacturer', 'description', 'reference', 'author']
+    fields = ['name', 'material', 'substrate', 'manufacturer', 'description', 'reference', 'author']
     permission_required = 'Sample.sample_manage'
     template_name = "UdyniManagement/generic_form.html"
     
@@ -105,7 +105,7 @@ class SampleCreate(PermissionRequiredMixin, CreateViewMenu):
 
 class SampleUpdate(PermissionRequiredMixin, UpdateViewMenu):
     model = Sample
-    fields = ['name', 'material', 'substrate', 'manifacturer', 'description', 'reference', 'author']
+    fields = ['name', 'material', 'substrate', 'manufacturer', 'description', 'reference', 'author']
     permission_required = 'Sample.sample_manage'
     template_name = "UdyniManagement/generic_form.html"
 
