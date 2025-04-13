@@ -1,0 +1,79 @@
+{% extends "UdyniManagement/page.html" %}
+{% block content %}
+
+{% if can_edit %}
+<a href="{% url 'experiment_add' station_id=this_station_id %}" class="btn btn-primary btn-icon-split mb-4" aria-label="Add experiment for this experimental station">
+  <span class="icon text-white-50">
+      <i class="fas fa-circle-plus"></i>
+  </span>
+  <span class="text">Add experiment for this experimental station</span>
+</a>
+{% endif %}
+
+{% for experiment in object_list %}
+  <div class="card shadow mb-4">
+    <div class="card-header">
+      <h6 class="m-0 font-weight-bold text-primary">{{ experiment.experiment_id }}</h6>
+    </div>
+    <div class="card-body table-responsive">
+      <table cellspacing="0" cellpadding="0" class="table table-sm table-hover reporting">
+        <thead>
+          <tr>
+            <th>Creation time</th>
+            <th>Project</th>
+            <th>Reference</th>
+            <th>Description</th>
+            <th>Samples</th>
+            <th>Responsible</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        <!-- {% for experiment in group.list %} -->
+          <tr>
+            <td>{{ experiment.creation_time }}</td>
+            <td>{{ experiment.project }}</td>
+            <td>{{ experiment.reference }}</td>
+            <td>{{ experiment.description }}</td>
+            <td>{{ experiment.samples }}</td>
+            
+            <td>
+              {% for sample in experiment.samples %}
+                {{ sample.name }}
+                {% if can_edit_sample %}
+                  <a href="{% url 'sample_mod' pk=sample.sample_id %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
+                  <a href="{% url 'sample_del' pk=sample.sample_id %}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
+                {% endif %}
+                <br />
+              {% endfor %}
+            </td>
+
+            <td>{{ experiment.responsible }}</td>
+            <td>{{ experiment.status }}</td>
+
+            <td class="col-actions">
+              {% if can_edit %}
+                <!-- TODO ADD SAMPLE -->
+                <a href="{% url 'experiment_mod' pk=experiment.experiment_id %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
+                <a href="{% url 'experiment_del' pk=experiment.experiment_id %}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
+              {% endif %}
+              <!-- {% if perms.Experiments.costs_manage %}
+                <a href="{% url 'experiment_view' station_id=experimentalstation.station_id %}"  class="btn btn-sm btn-primary btn-icon-split" aria-label="Show experiments">
+                  <span class="icon text-white-50">
+                    <i class="fas fa-arrow-right"></i>
+                  </span>
+                  <span class="text">Show experiments</span>
+                </a>
+              {% endif %} -->
+            </td>
+          </tr>
+        <!-- {% endfor %} -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endfor %}
+
+
+{% endblock %}
