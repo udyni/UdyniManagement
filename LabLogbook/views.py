@@ -135,7 +135,7 @@ class SampleDelete(PermissionRequiredMixin, DeleteViewMenu):
     
 
 # =============================================
-# SAMPLE
+# EXPERIMENTAL STATION
 #
 class ExperimentalStationList(PermissionRequiredMixin, ListViewMenu):
     model = ExperimentalStation
