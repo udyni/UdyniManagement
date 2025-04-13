@@ -22,6 +22,13 @@ urlpatterns = [
     path('experimentalstations/add', views.ExperimentalStationCreate.as_view(), name='experimentalstation_add'),
     path('experimentalstations/<int:pk>/modify', views.ExperimentalStationUpdate.as_view(), name='experimentalstation_mod'),
     path('experimentalstations/<int:pk>/delete', views.ExperimentalStationDelete.as_view(), name='experimentalstation_del'),
+
+    # you can't edit the experimental station here, go look at how weorkpakages are implemented in projects
+    # give the possibility of adding a sample to an experiment
+    path('experimentalstations/<int:station_id>/experiments/', views.ExperimentList.as_view(), name='experiment_view'),
+    path('experimentalstations/<int:station_id>/experiments/add', views.ExperimentCreate.as_view(), name='experiment_add'),
+    path('experimentalstations/<int:station_id>/experiments/<int:pk>/modify', views.ExperimentUpdate.as_view(), name='experimentalstation_mod'),
+    path('experimentalstations/<int:station_id>/experiments/<int:pk>/delete', views.ExperimentDelete.as_view(), name='experimentalstation_del'),
 ]
 
 menu = {
