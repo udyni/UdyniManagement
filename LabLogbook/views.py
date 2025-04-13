@@ -207,41 +207,52 @@ class ExperimentList(PermissionRequiredMixin, ListViewMenu):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         station_id = self.kwargs['station_id']
-        station = ExperimentalStation.objects.get(station_id=station_id)
+        station = ExperimentalStation.objects.get(station_id=station_id)  # here we must query for the name of the experimental station since it's not in context
         context['title'] = f"Experiments for {station.name}"
+        context['this_station_id'] = station_id  # here the experimental station id is saved so that the urls in the html page can reference to it
         context['can_edit'] = self.request.user.has_perm('Experiment.experiment_manage')
+        context['can_edit_sample'] = self.request.user.has_perm('Sample.sample_manage')
         return context
 
 
 class ExperimentCreate(PermissionRequiredMixin, CreateViewMenu):
     model = Experiment
-    # experimental_station is not editable, it's the same from the web page the experiment has been created
-    # samples are editable throught their action column
-    fields = ['creation_time', 'project', 'reference', 'description', 'responsible','status']
+    fields = ['project', 'reference', 'description', 'responsible','status']
     permission_required = 'Experiment.experiment_manage'
     template_name = "UdyniManagement/generic_form.html"
     
     def get_success_url(self):
-        return reverse_lazy('experiment_view')
+        station_id = self.kwargs['station_id']
+        return reverse_lazy('experiment_view', kwargs={'station_id': station_id})
+    
+    # experimental_station is not editable, it's the same from the web page the experiment has been created
+    def form_valid(self, form):
+        station_id = self.kwargs['station_id']
+        experimental_station = get_object_or_404(ExperimentalStation, station_id=station_id)
+        form.instance.experimental_station = experimental_station
+        return super().form_valid(form)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = f"Add new experiment for {context['experiment'].experimental_station}"
+        station_id = self.kwargs['station_id']
+        station = ExperimentalStation.objects.get(station_id=station_id)  # here we must query for the name of the experimental station since it's not in context
+        context['title'] = f"Add new experiment for {station.name}"
         context['back_url'] = self.get_success_url()
         return context
 
 class ExperimentUpdate(PermissionRequiredMixin, UpdateViewMenu):
     model = Experiment
-    fields = ['creation_time', 'project', 'reference', 'description', 'responsible','status']
+    fields = ['project', 'reference', 'description', 'responsible','status']
     permission_required = 'Experiment.experiment_manage'
     template_name = "UdyniManagement/generic_form.html"
 
     def get_success_url(self):
-        return reverse_lazy('experiment_view')
+        station_id = self.kwargs['station_id']
+        return reverse_lazy('experiment_view', kwargs={'station_id': station_id})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = f"Modify experiment"
+        context['title'] = f"Modify experiment for {context['experiment'].experimental_station}"
         context['back_url'] = self.get_success_url()
         return context
 
@@ -251,7 +262,8 @@ class ExperimentDelete(PermissionRequiredMixin, DeleteViewMenu):
     template_name = "UdyniManagement/confirm_delete.html"
 
     def get_success_url(self):
-        return reverse_lazy('experiment_view')
+        station_id = self.kwargs['station_id']
+        return reverse_lazy('experiment_view', kwargs={'station_id': station_id})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
