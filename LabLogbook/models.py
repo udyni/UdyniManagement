@@ -90,14 +90,22 @@ class Experiment(models.Model):
     ]
 
     experiment_id = models.AutoField(primary_key=True)
+    creation_time = models.DateTimeField(auto_now_add=True)
+    experimental_station = models.ForeignKey(ExperimentalStation, on_delete=models.PROTECT)
     project = models.ForeignKey(Project, on_delete=models.PROTECT, null=True, blank=True)
     reference = models.CharField(max_length=255)
-    creation_time = models.DateTimeField(auto_now_add=True)
-    responsible = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
-    experimental_station = models.ForeignKey(ExperimentalStation, on_delete=models.PROTECT)
     description = models.TextField()
-    status = models.CharField(max_length=10, choices=POSSIBLE_STATUSES)
     samples = models.ManyToManyField(Sample, through="SampleForExperiment")
+    responsible = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
+    status = models.CharField(max_length=10, choices=POSSIBLE_STATUSES)
+
+    class Meta:
+        ordering = ['creation_time', 'experiment_id']
+        default_permissions = ()
+        permissions = [
+            ('experiment_view', 'View list of experiments'),
+            ('experiment_manage', 'Manage list of experiments'),
+        ]
 
     def __str__(self):
         return f"{self.experiment_id}, creation time: {self.creation_time.isoformat()}"
