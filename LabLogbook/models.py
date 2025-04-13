@@ -97,7 +97,9 @@ class Experiment(models.Model):
     project = models.ForeignKey(Project, on_delete=models.PROTECT, null=True, blank=True)
     reference = models.CharField(max_length=255)
     description = models.TextField()
-    samples = models.ManyToManyField(Sample, through="SampleForExperiment")
+    def get_samples(self):
+        return SampleForExperiment.objects.filter(experiment=self.experiment_id)
+    samples = property(get_samples)
     responsible = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
     status = models.CharField(max_length=10, choices=POSSIBLE_STATUSES)
 
