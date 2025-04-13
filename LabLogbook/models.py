@@ -118,6 +118,7 @@ class SampleForExperiment(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["experiment", "sample"], name="%(app_label)s_%(class)s_unique")
         ]
+        default_permissions = ()
 
 
 class Measurement(models.Model):
