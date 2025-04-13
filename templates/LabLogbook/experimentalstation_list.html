@@ -3,7 +3,7 @@
 {% block content %}
 
 {% if can_edit %}
-<a href="{% url 'experimentalstation_add' %}" class="btn btn-primary btn-icon-split mb-4" aria-label="Add experimental stationa">
+<a href="{% url 'experimentalstation_add' %}" class="btn btn-primary btn-icon-split mb-4" aria-label="Add experimental station">
   <span class="icon text-white-50">
       <i class="fas fa-circle-plus"></i>
   </span>
@@ -40,6 +40,14 @@
                 {% if perms.Reporting.costs_manage %}
                   <a href="{% url 'experimentalstation_mod' pk=experimentalstation.station_id %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
                   <a href="{% url 'experimentalstation_del' pk=experimentalstation.station_id %}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
+                {% endif %}
+                {% if perms.Experiments.costs_manage %} {# TODO: EDIT THIS BEFORE COMMITTING!!!!!!!! #}
+                  <a href="{% url 'experimentalstation_mod' pk=experimentalstation.station_id %}"  class="btn btn-sm btn-primary btn-icon-split" aria-label="Show experiments">
+                    <span class="icon text-white-50">
+                      <i class="fas fa-arrow-right"></i>
+                    </span>
+                    <span class="text">Show experiments</span>
+                  </a>
                 {% endif %}
               </td>
             </tr>
