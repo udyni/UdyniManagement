@@ -1,7 +1,8 @@
+from . import views
 from UdyniManagement.views import EmptyView
 
 from django.urls import path, reverse_lazy
-from . import views
+
 
 
 urlpatterns = [
