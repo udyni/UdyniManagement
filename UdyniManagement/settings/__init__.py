@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'crispy_forms',
+    'crispy_bootstrap4',
 ]
 
 MIDDLEWARE = [
@@ -81,9 +82,7 @@ AUTH_LDAP_GROUP_TYPE = PosixGroupType()
 
 # LDAP connection options for TLS
 AUTH_LDAP_CONNECTION_OPTIONS = {
-    ldap.OPT_X_TLS_CACERTFILE: r"/etc/ssl/certs/udyniCA.pem",
-    ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_ALLOW,
-    ldap.OPT_X_TLS_NEWCTX: 0,
+    ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_DEMAND,
 }
 
 # User attribute map
@@ -204,7 +203,8 @@ STATICFILES_DIRS = (
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Crispy forms template pack
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
+CRISPY_TEMPLATE_PACK = "bootstrap4"
 CRISPY_FAIL_SILENTLY = not DEBUG
 
 # SIGLA
