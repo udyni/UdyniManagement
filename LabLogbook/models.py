@@ -162,6 +162,13 @@ class Comment(models.Model):
     type = models.CharField(max_length=12, choices=COMMENT_TYPES)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
 
+    class Meta:
+        # comments are ordered by parent, this way the first in the database are surely the root ones
+        # then they are ordered by comment_id, that's because the older comments have older comment_id
+        ordering = ['parent', 'comment_id']
+        default_permissions = ()
+        # TODO permissions will be added in the future
+    
     def __str__(self):
         return f"Comment {self.comment_id} for experiment: {self.experiment}, reply to: {self.parent}"
 
