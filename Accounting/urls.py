@@ -37,7 +37,8 @@ urlpatterns = [
     # Ajax
     path('ajax/<int:gae>/situazione', views.GAEAjaxSituazione.as_view(), name='acc_ajax_gae_situazione'),
     path('ajax/<int:gae>/impegni', views.GAEAjaxImpegni.as_view(), name='acc_ajax_gae_impegni'),
-    path('ajax/<int:impegno>/mandati', views.GAEAjaxMandati.as_view(), name='acc_ajax_mandati'),
+    path('ajax/impegni/<int:impegno>/mandati', views.GAEAjaxMandati.as_view(), name='acc_ajax_mandati'),
+    path('ajax/mandati/<int:mandato>', views.GAEAjaxDettagliMandato.as_view(), name='acc_ajax_mandato_details'),
     path('ajax/split/summary', views.SplitAccountingSummaryAjax.as_view(), name='acc_ajax_split_summary'),
     path('ajax/split/<int:pk>/impegni/add', views.SplitImpegniAjax.as_view(), name="acc_ajax_split_impegni"),
 ]
