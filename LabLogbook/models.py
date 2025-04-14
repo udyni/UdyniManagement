@@ -1,6 +1,7 @@
 from Projects.models import Project
 
 from django.db import models
+from mptt.models import MPTTModel, TreeForeignKey  # used for Comments
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
@@ -149,7 +150,7 @@ class File(models.Model):
         return f"File at: {self.path}"
 
 
-class Comment(models.Model):
+class Comment(MPTTModel):
     COMMENT_TYPES = [
         ("ACQUISITION", "Acquisition"),
         ("ANALYSIS", "Analysis"),
@@ -159,15 +160,14 @@ class Comment(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     measurement = models.ForeignKey(Measurement, on_delete=models.CASCADE, null=True, blank=True)
     type = models.CharField(max_length=12, choices=COMMENT_TYPES)
-    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
+    parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+
+    class MPTTMeta:
+        order_insertion_by = ['comment_id']
 
     class Meta:
-        # comments are ordered by parent, this way the first in the database are surely the root ones
-        # then they are ordered by comment_id, that's because the older comments have older comment_id
-        ordering = ['parent', 'comment_id']
         default_permissions = ()
-        # TODO permissions will be added in the future
-    
+
     def __str__(self):
         return f"Comment {self.comment_id} for experiment: {self.experiment}, reply to: {self.parent}"
 
