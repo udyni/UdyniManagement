@@ -33,7 +33,6 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'AccountManagement.apps.AccountmanagementConfig',
-    'FinancialReporting.apps.FinancialreportingConfig',  ## Old financial reporting app
     'Reporting.apps.ReportingConfig',
     'Projects.apps.ProjectsConfig',
     'Accounting.apps.AccountingConfig',
