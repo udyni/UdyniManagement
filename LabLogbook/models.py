@@ -98,9 +98,7 @@ class Experiment(models.Model):
     project = models.ForeignKey(Project, on_delete=models.PROTECT, null=True, blank=True)
     reference = models.CharField(max_length=255)
     description = models.TextField()
-    def get_samples(self):
-        return SampleForExperiment.objects.filter(experiment=self.experiment_id)
-    samples = property(get_samples)
+    samples = models.ManyToManyField(Sample, through='SampleForExperiment')
     responsible = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
     status = models.CharField(max_length=10, choices=POSSIBLE_STATUSES)
 
@@ -124,6 +122,9 @@ class SampleForExperiment(models.Model):
             models.UniqueConstraint(fields=["experiment", "sample"], name="%(app_label)s_%(class)s_unique")
         ]
         default_permissions = ()
+    
+    def __str__(self):
+        return f"Relation between sample {self.sample.name} and experiment {self.experiment.experiment_id}"
 
 
 class Measurement(models.Model):
