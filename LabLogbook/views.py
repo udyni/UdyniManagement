@@ -17,7 +17,7 @@ class LaboratoryCreate(PermissionRequiredMixin, CreateViewMenu):
     template_name = "UdyniManagement/generic_form.html"
     
     def get_success_url(self):
-        return reverse_lazy('laboratory_view')
+        return reverse_lazy('experimentalstation_view')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -32,7 +32,7 @@ class LaboratoryUpdate(PermissionRequiredMixin, UpdateViewMenu):
     template_name = "UdyniManagement/generic_form.html"
 
     def get_success_url(self):
-        return reverse_lazy('laboratory_view')
+        return reverse_lazy('experimentalstation_view')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -46,7 +46,7 @@ class LaboratoryDelete(PermissionRequiredMixin, DeleteViewMenu):
     template_name = "UdyniManagement/confirm_delete.html"
 
     def get_success_url(self):
-        return reverse_lazy('laboratory_view')
+        return reverse_lazy('experimentalstation_view')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
