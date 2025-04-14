@@ -7,26 +7,6 @@ from django.core.exceptions import ValidationError
 
 UserModel = get_user_model()
 
-class Laboratory(models.Model):
-    laboratory_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    description = models.TextField()
-    location = models.CharField(max_length=255)
-
-    class Meta:
-        ordering = ["name"]
-        constraints = [
-            models.UniqueConstraint(fields=['name'], name="%(app_label)s_%(class)s_unique"),
-        ]
-        default_permissions = ()
-        permissions = [
-            ('laboratory_view', 'View list of laboratories'),
-            ('laboratory_manage', 'Manage list of laboratories'),
-        ]
-
-    def __str__(self):
-        return f"{self.name}: {self.location}"
-
 
 class Sample(models.Model):
     sample_id = models.AutoField(primary_key=True)
@@ -51,6 +31,27 @@ class Sample(models.Model):
     
     def __str__(self):
         return f'{self.name}'
+
+
+class Laboratory(models.Model):
+    laboratory_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    location = models.CharField(max_length=255)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(fields=['name'], name="%(app_label)s_%(class)s_unique"),
+        ]
+        default_permissions = ()
+        permissions = [
+            ('laboratory_view', 'View list of laboratories'),
+            ('laboratory_manage', 'Manage list of laboratories'),
+        ]
+
+    def __str__(self):
+        return f"{self.name}: {self.location}"
 
 
 class ExperimentalStation(models.Model):
