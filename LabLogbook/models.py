@@ -172,6 +172,7 @@ class Comment(models.Model):
     def __str__(self):
         return f"Comment {self.comment_id} for experiment: {self.experiment}, reply to: {self.parent}"
 
+
 class CommentContent(models.Model):
     comment_content_id = models.AutoField(primary_key=True)
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
@@ -180,6 +181,13 @@ class CommentContent(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     text = models.TextField(null=True)
 
+    class Meta:
+        # ordering by comment because that way they stay ordered and different versions can be accessed contiguously
+        # reverse ordered by version so that the first comment found is the latest
+        ordering = ['comment', '-version']
+        default_permissions = ()
+        # TODO permissions will be added in the future
+    
     def __str__(self):
         return f"Content for comment: {self.comment}, version: {self.version}, timestamp: {self.timestamp.isoformat()}"
 
