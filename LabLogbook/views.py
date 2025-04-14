@@ -10,19 +10,6 @@ from django.shortcuts import get_object_or_404, redirect
 # =============================================
 # LABORATORY
 #
-class LaboratoryList(PermissionRequiredMixin, ListViewMenu):
-    model = Laboratory
-    permission_required = 'Laboratory.laboratory_view'
-
-    def get_queryset(self):
-        return Laboratory.objects.all()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = "Laboratories"
-        context['can_edit'] = self.request.user.has_perm('Laboratory.laboratory_manage')
-        return context
-
 class LaboratoryCreate(PermissionRequiredMixin, CreateViewMenu):
     model = Laboratory
     fields = ['name', 'description', 'location']
