@@ -84,6 +84,7 @@ class LabAndExperimentalStationList(PermissionRequiredMixin, ListViewMenu): # Th
         context['title'] = "Labs & Experimental Stations"
         context['can_edit_lab'] = self.request.user.has_perm('Laboratory.laboratory_manage')
         context['can_edit_station'] = self.request.user.has_perm('ExperimentalStation.experimentalstation_manage')
+        context['laboratory_list'] = Laboratory.objects.all()
         return context
 
 
@@ -164,7 +165,7 @@ class ExperimentalStationCreate(PermissionRequiredMixin, CreateViewMenu):
 
 class ExperimentalStationUpdate(PermissionRequiredMixin, UpdateViewMenu):
     model = ExperimentalStation
-    fields = ['name', 'laboratory', 'description', 'responsible', 'status']  # here laboratory is present in case is necessary to move an exp station to another lab
+    fields = ['laboratory', 'name', 'description', 'responsible', 'status']  # here laboratory is present in case is necessary to move an exp station to another lab
     permission_required = 'ExperimentalStation.experimentalstation_manage'
     template_name = "UdyniManagement/generic_form.html"
 
