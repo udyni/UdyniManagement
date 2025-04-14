@@ -273,3 +273,45 @@ class ExperimentDelete(PermissionRequiredMixin, DeleteViewMenu):
         return context
 
 
+# =============================================
+# SAMPLE FOR EXPERIMENT
+#
+class SampleForExperimentAdd(PermissionRequiredMixin, CreateViewMenu):
+    model = SampleForExperiment
+    fields = ['sample']
+    permission_required = 'Experiment.experiment_manage'
+    template_name = "UdyniManagement/generic_form.html"
+    
+    def get_success_url(self):
+        station_id = self.kwargs['station_id']
+        return reverse_lazy('experiment_view', kwargs={'station_id': station_id})
+    
+    def form_valid(self, form):
+        experiment_id = self.kwargs['experiment_id']
+        experiment = get_object_or_404(Experiment, experiment_id=experiment_id)
+        form.instance.experiment = experiment
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        experiment_id = self.kwargs['experiment_id']
+        experiment = Experiment.objects.get(experiment_id=experiment_id)  # here we must query for the experiment id since it's not in context
+        context['title'] = f"Add existing sample to experiement {experiment.experiment_id}"
+        context['back_url'] = self.get_success_url()
+        return context
+    
+class SampleForExperimentRemove(PermissionRequiredMixin, DeleteViewMenu):
+    model = SampleForExperiment
+    permission_required = 'Experiment.experiment_manage'
+    template_name = "UdyniManagement/confirm_delete.html"
+
+    def get_success_url(self):
+        station_id = self.kwargs['station_id']
+        return reverse_lazy('experiment_view', kwargs={'station_id': station_id})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Remove sample from the experiment"
+        context['message'] = f"Are you sure you want to remove the sample '{context['sampleforexperiment'].sample.name}' from the experiment '{context['sampleforexperiment'].experiment.experiment_id}'?"
+        context['back_url'] = self.get_success_url()
+        return context
