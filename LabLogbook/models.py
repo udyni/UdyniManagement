@@ -120,6 +120,7 @@ class SampleForExperiment(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     sample = models.ForeignKey(Sample, on_delete=models.PROTECT)
     class Meta:
+        ordering = ['sample']
         constraints = [
             models.UniqueConstraint(fields=["experiment", "sample"], name="%(app_label)s_%(class)s_unique")
         ]
