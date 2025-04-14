@@ -15,24 +15,24 @@ urlpatterns = [
     path('samples/<int:sample_id>/delete', views.SampleDelete.as_view(), name='sample_del'),
 
     # Experimental Stations
-    path('experimentalstations/', views.ExperimentalStationList.as_view(), name='experimentalstation_view'),
-    path('experimentalstations/laboratories/add', views.LaboratoryCreate.as_view(), name='laboratory_add'),
-    path('experimentalstations/laboratories/<int:laboratory_id>/modify', views.LaboratoryUpdate.as_view(), name='laboratory_mod'),
-    path('experimentalstations/laboratories/<int:laboratory_id>/delete', views.LaboratoryUpdate.as_view(), name='laboratory_del'),    
-    path('experimentalstations/laboratories/<int:laboratory_id>/add', views.ExperimentalStationCreate.as_view(), name='experimentalstation_add'),
-    path('experimentalstations/<int:station_id>/modify', views.ExperimentalStationUpdate.as_view(), name='experimentalstation_mod'),
-    path('experimentalstations/<int:station_id>/delete', views.ExperimentalStationDelete.as_view(), name='experimentalstation_del'),
+    path('labs_and_experimentalstations/', views.LabAndExperimentalStationList.as_view(), name='lab_and_experimentalstation_view'),
+    path('labs_and_experimentalstations/laboratories/add', views.LaboratoryCreate.as_view(), name='laboratory_add'),
+    path('labs_and_experimentalstations/laboratories/<int:laboratory_id>/modify', views.LaboratoryUpdate.as_view(), name='laboratory_mod'),
+    path('labs_and_experimentalstations/laboratories/<int:laboratory_id>/delete', views.LaboratoryUpdate.as_view(), name='laboratory_del'),
+    path('labs_and_experimentalstations/laboratories/<int:laboratory_id>/experimentalstations/add', views.ExperimentalStationCreate.as_view(), name='experimentalstation_add'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/modify', views.ExperimentalStationUpdate.as_view(), name='experimentalstation_mod'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/delete', views.ExperimentalStationDelete.as_view(), name='experimentalstation_del'),
 
     # Experiments for experimental station
     # TODO
     # look at personnel reporting page for arrrow that goes down
     # give the possibility of adding a sample to an experiment
-    path('experimentalstations/<int:station_id>/experiments/', views.ExperimentList.as_view(), name='experiment_view'),
-    path('experimentalstations/<int:station_id>/experiments/add', views.ExperimentCreate.as_view(), name='experiment_add'),
-    path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/modify', views.ExperimentUpdate.as_view(), name='experiment_mod'),
-    path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/delete', views.ExperimentDelete.as_view(), name='experiment_del'),
-    path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/add_sample/', views.ExperimentSampleAdd.as_view(), name='experiment_sample_add'),
-    path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/remove_sample/<int:sample_id>', views.ExperimentSampleRemove.as_view(), name='experiment_sample_del'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/', views.ExperimentList.as_view(), name='experiment_view'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/add', views.ExperimentCreate.as_view(), name='experiment_add'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/modify', views.ExperimentUpdate.as_view(), name='experiment_mod'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/delete', views.ExperimentDelete.as_view(), name='experiment_del'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/add_sample/', views.ExperimentSampleAdd.as_view(), name='experiment_sample_add'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/remove_sample/<int:sample_id>', views.ExperimentSampleRemove.as_view(), name='experiment_sample_del'),
 
     # Logbook for experiment TODO
     # path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook', views.LogbookList.as_view(), name='logbook_view'),
@@ -44,8 +44,8 @@ menu = {
     'icon': 'fa-solid fa-book',
     'subsections': [
         {
-            'name': 'Labs & Experimental Stations',
-            'link': reverse_lazy('experimentalstation_view'),
+            'name': 'Labs & Exp Stations',
+            'link': reverse_lazy('lab_and_experimentalstation_view'),
             'permissions': ['Laboratory.laboratory_view', 'ExperimentalStation.experimentalstation_view'],
         },
         {
