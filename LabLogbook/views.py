@@ -8,55 +8,6 @@ from django.shortcuts import get_object_or_404, redirect
 
 
 # =============================================
-# LABORATORY
-#
-class LaboratoryCreate(PermissionRequiredMixin, CreateViewMenu):
-    model = Laboratory
-    fields = ['name', 'description', 'location']
-    permission_required = 'Laboratory.laboratory_manage'
-    template_name = "UdyniManagement/generic_form.html"
-    
-    def get_success_url(self):
-        return reverse_lazy('experimentalstation_view')
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = "Add new laboratory"
-        context['back_url'] = self.get_success_url()
-        return context
-
-class LaboratoryUpdate(PermissionRequiredMixin, UpdateViewMenu):
-    model = Laboratory
-    fields = ['name', 'description', 'location']
-    permission_required = 'Laboratory.laboratory_manage'
-    template_name = "UdyniManagement/generic_form.html"
-
-    def get_success_url(self):
-        return reverse_lazy('experimentalstation_view')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = "Modify laboratory"
-        context['back_url'] = self.get_success_url()
-        return context
-
-class LaboratoryDelete(PermissionRequiredMixin, DeleteViewMenu):
-    model = Laboratory
-    permission_required = 'Laboratory.laboratory_manage'
-    template_name = "UdyniManagement/confirm_delete.html"
-
-    def get_success_url(self):
-        return reverse_lazy('experimentalstation_view')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = "Delete laboratory"
-        context['message'] = f"Are you sure you want to delete the laboratory: {context['laboratory']}?"
-        context['back_url'] = self.get_success_url()
-        return context
-
-
-# =============================================
 # SAMPLE
 #
 class SampleList(PermissionRequiredMixin, ListViewMenu):
@@ -117,6 +68,55 @@ class SampleDelete(PermissionRequiredMixin, DeleteViewMenu):
         context['back_url'] = self.get_success_url()
         return context
     
+
+# =============================================
+# LABORATORY
+#
+class LaboratoryCreate(PermissionRequiredMixin, CreateViewMenu):
+    model = Laboratory
+    fields = ['name', 'description', 'location']
+    permission_required = 'Laboratory.laboratory_manage'
+    template_name = "UdyniManagement/generic_form.html"
+    
+    def get_success_url(self):
+        return reverse_lazy('experimentalstation_view')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Add new laboratory"
+        context['back_url'] = self.get_success_url()
+        return context
+
+class LaboratoryUpdate(PermissionRequiredMixin, UpdateViewMenu):
+    model = Laboratory
+    fields = ['name', 'description', 'location']
+    permission_required = 'Laboratory.laboratory_manage'
+    template_name = "UdyniManagement/generic_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy('experimentalstation_view')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Modify laboratory"
+        context['back_url'] = self.get_success_url()
+        return context
+
+class LaboratoryDelete(PermissionRequiredMixin, DeleteViewMenu):
+    model = Laboratory
+    permission_required = 'Laboratory.laboratory_manage'
+    template_name = "UdyniManagement/confirm_delete.html"
+
+    def get_success_url(self):
+        return reverse_lazy('experimentalstation_view')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Delete laboratory"
+        context['message'] = f"Are you sure you want to delete the laboratory: {context['laboratory']}?"
+        context['back_url'] = self.get_success_url()
+        return context
+
 
 # =============================================
 # EXPERIMENTAL STATION
