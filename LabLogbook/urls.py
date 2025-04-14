@@ -31,8 +31,9 @@ urlpatterns = [
     path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/add', views.ExperimentCreate.as_view(), name='experiment_add'),
     path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:pk>/modify', views.ExperimentUpdate.as_view(), name='experiment_mod'),
     path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:pk>/delete', views.ExperimentDelete.as_view(), name='experiment_del'),
-    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/add_sample/', views.ExperimentSampleAdd.as_view(), name='experiment_sample_add'),
-    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/remove_sample/<int:pk>', views.ExperimentSampleRemove.as_view(), name='experiment_sample_del'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/add_sample', views.SampleForExperimentAdd.as_view(), name='experiment_sample_add'),
+    # note that here pk is the key of the SampleForExperiment object, not of the sample object
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/remove_sample/<int:pk>', views.SampleForExperimentRemove.as_view(), name='experiment_sample_del'),
 
     # Logbook for experiment TODO
     # path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook', views.LogbookList.as_view(), name='logbook_view'),
