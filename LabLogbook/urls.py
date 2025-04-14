@@ -28,7 +28,7 @@ urlpatterns = [
     # look at personnel reporting page for arrrow that goes down
     # give the possibility of adding a sample to an experiment
     path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/', views.ExperimentList.as_view(), name='experiment_view'),
-    path('labs_and_experimentalstations/experimentalstations/<int:station_idk>/experiments/add', views.ExperimentCreate.as_view(), name='experiment_add'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/add', views.ExperimentCreate.as_view(), name='experiment_add'),
     path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:pk>/modify', views.ExperimentUpdate.as_view(), name='experiment_mod'),
     path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:pk>/delete', views.ExperimentDelete.as_view(), name='experiment_del'),
     path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/add_sample/', views.ExperimentSampleAdd.as_view(), name='experiment_sample_add'),
