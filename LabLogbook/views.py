@@ -130,8 +130,9 @@ class ExperimentalStationList(PermissionRequiredMixin, ListViewMenu):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = "Experimental Stations"
-        context['can_edit'] = self.request.user.has_perm('ExperimentalStation.experimentalstation_manage')
+        context['title'] = "Labs & Experimental Stations"
+        context['can_edit_lab'] = self.request.user.has_perm('Laboratory.laboratory_manage')
+        context['can_edit_station'] = self.request.user.has_perm('ExperimentalStation.experimentalstation_manage')
         return context
 
 class ExperimentalStationCreate(PermissionRequiredMixin, CreateViewMenu):
