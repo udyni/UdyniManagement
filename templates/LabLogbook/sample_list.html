@@ -10,42 +10,44 @@
   </a>
 {% endif %}
 
-<div class="card mb-4">
-  <div class="card-body table-responsive">
-    <table cellspacing="0" cellpadding="0" class="table table-sm table-hover reporting">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Material</th>
-          <th>Substrate</th>
-          <th>Manufacturer</th>
-          <th>Description</th>
-          <th>Reference</th>
-          <th>Author</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for sample in object_list %}
+{% if object_list %}
+  <div class="card mb-4">
+    <div class="card-body table-responsive">
+      <table cellspacing="0" cellpadding="0" class="table table-sm table-hover reporting">
+        <thead>
           <tr>
-            <td>{{ sample.name }}</td>
-            <td>{{ sample.material }}</td>
-            <td>{{ sample.substrate }}</td>
-            <td>{{ sample.manufacturer }}</td>
-            <td>{{ sample.description }}</td>
-            <td>{{ sample.reference }}</td>
-            <td>{{ sample.author }}</td>
-            <td class="col-actions">
-              {% if can_edit %}
-                <a href="{% url 'sample_mod' pk=sample.sample_id %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
-                <a href="{% url 'sample_del' pk=sample.sample_id %}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
-              {% endif %}
-            </td>
+            <th>Name</th>
+            <th>Material</th>
+            <th>Substrate</th>
+            <th>Manufacturer</th>
+            <th>Description</th>
+            <th>Reference</th>
+            <th>Author</th>
+            <th>Actions</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for sample in object_list %}
+            <tr>
+              <td>{{ sample.name }}</td>
+              <td>{{ sample.material }}</td>
+              <td>{{ sample.substrate }}</td>
+              <td>{{ sample.manufacturer }}</td>
+              <td>{{ sample.description }}</td>
+              <td>{{ sample.reference }}</td>
+              <td>{{ sample.author }}</td>
+              <td class="col-actions">
+                {% if can_edit %}
+                  <a href="{% url 'sample_mod' pk=sample.sample_id %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
+                  <a href="{% url 'sample_del' pk=sample.sample_id %}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
-</div>
+{% endif %}
 
 {% endblock %}
