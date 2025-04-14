@@ -156,7 +156,9 @@ class ExperimentalStationCreate(PermissionRequiredMixin, CreateViewMenu):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = "Add new experimental station"
+        laboratory_id = self.kwargs['laboratory_id']
+        laboratory = Laboratory.objects.get(laboratory_id=laboratory_id)  # here we must query for the name of the laboratory since it's not in context
+        context['title'] = f"Add new experimental station to {laboratory.name}"
         context['back_url'] = self.get_success_url()
         return context
 
@@ -171,7 +173,7 @@ class ExperimentalStationUpdate(PermissionRequiredMixin, UpdateViewMenu):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = f"Modify experimental station in lab {context['experimentalstation'].laboratory}"
+        context['title'] = f"Modify experimental station"
         context['back_url'] = self.get_success_url()
         return context
 
