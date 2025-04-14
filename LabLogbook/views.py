@@ -123,7 +123,7 @@ class SampleDelete(PermissionRequiredMixin, DeleteViewMenu):
 #
 class ExperimentalStationList(PermissionRequiredMixin, ListViewMenu):
     model = ExperimentalStation
-    permission_required = 'ExperimentalStation.experimentalstation_view'
+    permission_required = 'Laboratory.laboratory_view', 'ExperimentalStation.experimentalstation_view'
 
     def get_queryset(self):
         return ExperimentalStation.objects.all()
