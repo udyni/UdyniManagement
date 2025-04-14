@@ -44,7 +44,7 @@ menu = {
     'icon': 'fa-solid fa-book',
     'subsections': [
         {
-            'name': 'Experimental Stations',
+            'name': 'Labs & Experimental Stations',
             'link': reverse_lazy('experimentalstation_view'),
             'permissions': ['Laboratory.laboratory_view', 'ExperimentalStation.experimentalstation_view'],
         },
