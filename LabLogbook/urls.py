@@ -26,7 +26,6 @@ urlpatterns = [
     # Experiments for experimental station
     # TODO
     # look at personnel reporting page for arrrow that goes down
-    # give the possibility of adding a sample to an experiment
     path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/', views.ExperimentList.as_view(), name='experiment_view'),
     path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/add', views.ExperimentCreate.as_view(), name='experiment_add'),
     path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:pk>/modify', views.ExperimentUpdate.as_view(), name='experiment_mod'),
@@ -36,7 +35,12 @@ urlpatterns = [
     path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/remove_sample/<int:pk>', views.SampleForExperimentRemove.as_view(), name='experiment_sample_del'),
 
     # Logbook for experiment TODO
-    # path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook', views.LogbookList.as_view(), name='logbook_view'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook', views.CommentList.as_view(), name='comment_view'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/add', views.CommentCreate.as_view(), name='comment_add'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/modify', views.CommentContentCreate.as_view(), name='commentcontent_add'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/reply', views.CommentReply.as_view(), name='comment_reply'),
+    path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/delete', views.CommentList.as_view(), name='comment_del'),
+
 ]
 
 menu = {
