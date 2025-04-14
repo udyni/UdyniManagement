@@ -191,7 +191,7 @@ class CommentContent(models.Model):
     def __str__(self):
         return f"Content for comment: {self.comment}, version: {self.version}, timestamp: {self.timestamp.isoformat()}"
 
-# For future versions of the application
+# TODO to be implemented for future versions of the application
 class Attachment(models.Model):
     attachment_id = models.AutoField(primary_key=True)
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
@@ -200,6 +200,10 @@ class Attachment(models.Model):
     deleted = models.BooleanField(default=False)
     mimetype = models.CharField(max_length=255)
     path = models.CharField(max_length=255)
+
+    class Meta:
+        default_permissions = ()
+        # TODO permissions will be added in the future, when the functionality will be implemented inside the application
 
     def __str__(self):
         return f"Attachment for comment: {self.comment}, timestamp: {self.timestamp.isoformat}"
