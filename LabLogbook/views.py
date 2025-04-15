@@ -14,9 +14,6 @@ class SampleList(PermissionRequiredMixin, ListViewMenu):
     model = Sample
     permission_required = 'Sample.sample_view'
 
-    def get_queryset(self):
-        return Sample.objects.all()
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = "Samples"
@@ -75,9 +72,6 @@ class SampleDelete(PermissionRequiredMixin, DeleteViewMenu):
 class LabAndExperimentalStationList(PermissionRequiredMixin, ListViewMenu): # This view is used for the 'Labs & Experimental Stations' page
     model = ExperimentalStation
     permission_required = 'Laboratory.laboratory_view', 'ExperimentalStation.experimentalstation_view'
-
-    def get_queryset(self):
-        return ExperimentalStation.objects.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
