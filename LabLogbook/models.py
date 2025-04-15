@@ -140,8 +140,8 @@ class Measurement(models.Model):
     class Meta:
         default_permissions = ()
         permissions = [
-            ('measument_view', 'View list of measurements'),
-            ('measument_manage', 'Manage list of measurements'),
+            ('measurement_view', 'View list of measurements'),
+            ('measurement_manage', 'Manage list of measurements'),
         ]
     
     def __str__(self):
