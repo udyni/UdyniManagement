@@ -33,11 +33,11 @@ urlpatterns = [
     path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/remove_sample/<int:pk>', views.SampleForExperimentRemove.as_view(), name='experiment_sample_del'),
     
     # Logbook for experiment TODO
-    # path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook', views.CommentList.as_view(), name='comment_view'),
-    # path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/add', views.CommentCreate.as_view(), name='comment_add'),
-    # path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/modify', views.CommentContentCreate.as_view(), name='commentcontent_add'),
-    # path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/reply', views.CommentReply.as_view(), name='comment_reply'),
-    # path('labs_and_experimentalstations/experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/delete', views.CommentList.as_view(), name='comment_del'),
+    path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook', views.CommentList.as_view(), name='comment_view'),
+    # path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/add', , name='comment_add'),
+    # path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/modify', , name='commentcontent_add'),
+    # path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/reply', , name='comment_reply'),
+    # path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/delete', , name='comment_del'),
 
 ]
 
