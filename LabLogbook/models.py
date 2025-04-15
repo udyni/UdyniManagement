@@ -139,10 +139,6 @@ class Measurement(models.Model):
 
     class Meta:
         default_permissions = ()
-        permissions = [
-            ('measurement_view', 'View list of measurements'),
-            ('measurement_manage', 'Manage list of measurements'),
-        ]
     
     def __str__(self):
         return f"{self.measurement_id}, start time: {self.start_time.isoformat()}, end time: {self.end_time.isoformat()}"
@@ -158,10 +154,6 @@ class File(models.Model):
             models.UniqueConstraint(fields=['path'], name="%(app_label)s_%(class)s_unique"),
         ]
         default_permissions = ()
-        permissions = [
-            ('file_view', 'View list of files'),
-            ('file_manage', 'Manage list of files'),
-        ]
     
     def __str__(self):
         return f"File at: {self.path}"
@@ -184,6 +176,7 @@ class Comment(MPTTModel):
 
     class Meta:
         default_permissions = ()
+        # TODO permissions will be added in the future
 
     def __str__(self):
         return f"Comment {self.comment_id} for experiment: {self.experiment}, reply to: {self.parent}"
