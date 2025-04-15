@@ -137,6 +137,13 @@ class Measurement(models.Model):
     end_time = models.DateTimeField()
     sample = models.ForeignKey(Sample, on_delete=models.PROTECT)
 
+    class Meta:
+        default_permissions = ()
+        permissions = [
+            ('measument_view', 'View list of measurements'),
+            ('measument_manage', 'Manage list of measurements'),
+        ]
+    
     def __str__(self):
         return f"{self.measurement_id}, start time: {self.start_time.isoformat()}, end time: {self.end_time.isoformat()}"
 
@@ -146,6 +153,16 @@ class File(models.Model):
     measurement = models.ForeignKey(Measurement, on_delete=models.PROTECT)
     path = models.CharField(max_length=255)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['path'], name="%(app_label)s_%(class)s_unique"),
+        ]
+        default_permissions = ()
+        permissions = [
+            ('file_view', 'View list of files'),
+            ('file_manage', 'Manage list of files'),
+        ]
+    
     def __str__(self):
         return f"File at: {self.path}"
 
@@ -190,8 +207,8 @@ class CommentContent(models.Model):
     def __str__(self):
         return f"Content for comment: {self.comment}, version: {self.version}, timestamp: {self.timestamp.isoformat()}"
 
-# TODO to be implemented for future versions of the application
-class Attachment(models.Model):
+
+class Attachment(models.Model): # TODO to be implemented for future versions of the application ################################
     attachment_id = models.AutoField(primary_key=True)
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
     author = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
