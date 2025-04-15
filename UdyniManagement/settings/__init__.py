@@ -18,13 +18,10 @@ from django_auth_ldap.config import LDAPSearch, PosixGroupType
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '********** TO BE REPLACED **********'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -36,12 +33,12 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'AccountManagement.apps.AccountmanagementConfig',
-    'FinancialReporting.apps.FinancialreportingConfig',  ## Old financial reporting app
     'Reporting.apps.ReportingConfig',
     'Projects.apps.ProjectsConfig',
     'Accounting.apps.AccountingConfig',
     'Tags.apps.TagsConfig',
     'LabLogbook.apps.LablogbookConfig',
+    'sigla.apps.SiglaConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -50,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'mptt',
+    'crispy_bootstrap4',
 ]
 
 MIDDLEWARE = [
@@ -86,9 +84,7 @@ AUTH_LDAP_GROUP_TYPE = PosixGroupType()
 
 # LDAP connection options for TLS
 AUTH_LDAP_CONNECTION_OPTIONS = {
-    ldap.OPT_X_TLS_CACERTFILE: r"/etc/ssl/certs/udyniCA.pem",
-    ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_ALLOW,
-    ldap.OPT_X_TLS_NEWCTX: 0,
+    ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_DEMAND,
 }
 
 # User attribute map
@@ -198,10 +194,9 @@ DATE_INPUT_FORMATS = ['%d/%m/%Y', '%Y-%m-%d']
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'http_static')
+STATIC_ROOT = BASE_DIR / 'http_static'
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'root'),
+    BASE_DIR / 'static',
 )
 
 # Default primary key field type
@@ -210,7 +205,8 @@ STATICFILES_DIRS = (
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Crispy forms template pack
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
+CRISPY_TEMPLATE_PACK = "bootstrap4"
 CRISPY_FAIL_SILENTLY = not DEBUG
 
 # SIGLA
@@ -226,10 +222,3 @@ SERVER_EMAIL = 'UDynI Management <no-reply@udyni.lab>'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.udyni.lab'
 EMAIL_PORT = 25
-
-# Email configuration (smtp-relay.sendinblue.com)
-# EMAIL_USE_TLS = True
-# EMAIL_HOST = 'smtp-relay.sendinblue.com'
-# EMAIL_PORT = 587
-# EMAIL_HOST_USER = 'udynilabs@gmail.com'
-# EMAIL_HOST_PASSWORD = '********'

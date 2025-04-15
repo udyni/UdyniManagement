@@ -27,7 +27,7 @@ urlpatterns = [
     path('split/<int:pk>/del', views.SplitAccountingDelete.as_view(), name='acc_split_contab_del'),
     path('split/<int:pk>/impegni/add', views.SplitImpegniAdd.as_view(), name='acc_split_impegni_add'),
     path('split/<int:pk>/impegni/del', views.SplitImpegniDelete.as_view(), name='acc_split_impegni_del'),
-    path('split/variazioni/add/<str:gae>', views.SplitVariazioniAdd.as_view(), name='acc_split_var_add'),
+    path('split/variazioni/add/<int:gae>', views.SplitVariazioniAdd.as_view(), name='acc_split_var_add'),
     path('split/variazioni/<int:vpk>/mod', views.SplitVariazioniUpdate.as_view(), name='acc_split_var_mod'),
     path('split/variazioni/<int:vpk>/del', views.SplitVariazioniDelete.as_view(), name='acc_split_var_del'),
 
@@ -37,7 +37,8 @@ urlpatterns = [
     # Ajax
     path('ajax/<int:gae>/situazione', views.GAEAjaxSituazione.as_view(), name='acc_ajax_gae_situazione'),
     path('ajax/<int:gae>/impegni', views.GAEAjaxImpegni.as_view(), name='acc_ajax_gae_impegni'),
-    path('ajax/<int:impegno>/mandati', views.GAEAjaxMandati.as_view(), name='acc_ajax_mandati'),
+    path('ajax/impegni/<int:impegno>/mandati', views.GAEAjaxMandati.as_view(), name='acc_ajax_mandati'),
+    path('ajax/mandati/<int:mandato>', views.GAEAjaxDettagliMandato.as_view(), name='acc_ajax_mandato_details'),
     path('ajax/split/summary', views.SplitAccountingSummaryAjax.as_view(), name='acc_ajax_split_summary'),
     path('ajax/split/<int:pk>/impegni/add', views.SplitImpegniAjax.as_view(), name="acc_ajax_split_impegni"),
 ]

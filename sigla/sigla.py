@@ -353,7 +353,7 @@ class SIGLA(object):
         s = time.time()
         fatture = []
         # First retrieve pg_docamm from ConsMandatoRigaAction.json
-        data = s.postRequest('ConsMandatoRigaAction.json', filters=[('pg_mandato', mandato), ('esercizio', esercizio), ], esercizio=esercizio)
+        data = self.postRequest('ConsMandatoRigaAction.json', filters=[('pg_mandato', mandato), ('esercizio', esercizio), ], esercizio=esercizio)
         if len(data):
             for el in data:
                 obj = {
@@ -365,7 +365,7 @@ class SIGLA(object):
                     'importo': el['im_mandato_riga'],
                 }
                 if el['cd_tipo_documento_amm'] == 'FATTURA_P':
-                    df = s.postRequest('ConsFatturaPassivaAction.json', filters=[('pgFatturaPassiva', el['pg_doc_amm']), ('cdUnitaOrganizzativa', self.getCdu()), ('esercizio', esercizio), ], esercizio=esercizio)
+                    df = self.postRequest('ConsFatturaPassivaAction.json', filters=[('pgFatturaPassiva', el['pg_doc_amm']), ('cdUnitaOrganizzativa', self.getCdu()), ('esercizio', esercizio), ], esercizio=esercizio)
                     obj['pg_fattura'] = df[0]['pgFatturaPassiva']
                     obj['nr_fattura'] = df[0]['nrFatturaFornitore']
                     obj['dt_fattura'] = df[0]['dtFatturaFornitore']

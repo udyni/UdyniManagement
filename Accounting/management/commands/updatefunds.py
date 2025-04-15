@@ -11,78 +11,79 @@ from sigla.sigla import SIGLA
 
 
 class Command(BaseCommand):
-    help = 'Update funds, impegni and mandati'
+    help = 'Sincronizzazione stanziamenti, variazioni, impegni and mandati con SIGLA'
 
     def handle(self, *args, **options):
-        # Start logger
+        # Carichiamo il logger specifico
         self.logger = logging.getLogger('UpdateFunds')
         self.logger.setLevel(logging.INFO if not settings.DEBUG else logging.DEBUG)
 
-        # Define formatter
+        # Definiamo il formattatore
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-        # Add console handler
+        # Aggiungiamo il console handler
         ch = logging.StreamHandler()
         ch.setLevel(logging.INFO if not settings.DEBUG else logging.DEBUG)
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
 
-        # Add file logger
+        # Aggiungiamo il file handler
         fh = logging.FileHandler(os.path.join(settings.BASE_DIR, "updatefunds.log"))
         fh.setLevel(logging.WARNING)
         fh.setFormatter(formatter)
         self.logger.addHandler(fh)
 
-        # Load SIGLA interface
+        # Carichiamo l'intefaccia per SIGLA
         sigla = SIGLA(settings.SIGLA_USERNAME, settings.SIGLA_PASSWORD, self.logger)
 
-        # First get projects informations
-        # NOTE: better to take all projects as the call for a single one takes anyway tens of seconds...
+        # Prima di tutto carichiamo l'elenco dei progetti
+        # NOTA: li carichiamo tutti, perchè una call per progetto è troppo lento (ogni call richiede qualche secondo...)
         progetti = sigla.getProgetti()
 
-        # Get all GAEs
+        # Carichiamo tutte le GAE definite nel DB
         gaes = GAE.objects.all()
 
-        # Cycle over each GAE and update info
+        # Aggiorniamo le informazioni per ogni GAE
         for gae in gaes:
             s = time.time()
 
-            # Get start date of project
+            # Selezioniamo il progetto e la data di inizio
             prj = gae.project.sigla_name
             start = progetti[prj]['start']
 
-            # Years to check
+            # Creiamo la lista di anni da controllare
             years = list(range(start.year, datetime.date.today().year + 1, 1))
 
             for y in years:
                 try:
-                    # Get competenza
+                    # Carichiamo prima la competenza
                     c = sigla.getCompetenza(gae.name, y)
 
-                    # Cycle over each 'voce'
+                    # Analizziamo ogni voce di spesa presente
                     new_pk = []
                     for k, v in c.items():
 
-                        # Get Voce
+                        # Cerchiamo la voce nel DB
                         try:
                             voce = VoceSpesa.objects.get(voce=k)
                         except VoceSpesa.DoesNotExist:
-                            # Does not exist. Add 'voce' to database
+                            # La voce non esiste. La aggiungiamo.
                             voce = VoceSpesa()
                             voce.voce = k
                             voce.description = v['descrizione']
                             voce.save()
 
-                        # Get or create 'stanziamento'
+                        # Cerchiamo se lo stanziamento esiste già
                         try:
                             stanziamento = Stanziamento.objects.get(gae=gae, esercizio=y, voce=voce)
                         except Stanziamento.DoesNotExist:
-                            # Does not exist. Create a new one
+                            # Non esiste. Lo aggiungiamo.
                             stanziamento = Stanziamento()
                             stanziamento.gae = gae
                             stanziamento.voce = voce
                             stanziamento.esercizio = y
 
+                        # Aggiorniamo lo stanziamento se necessario
                         stanziamento.stanziamento = v['stanziamento']
                         stanziamento.var_piu = v['var_piu']
                         stanziamento.var_meno = v['var_meno']
@@ -94,34 +95,34 @@ class Command(BaseCommand):
                         stanziamento.save()
                         new_pk.append(stanziamento.pk)
                         if settings.DEBUG:
-                            self.logger.debug("Updated 'stanziamento' for gae {0:s}, year {1:d}, 'voce' {2:s}".format(gae.name, y, k))
+                            self.logger.debug(f"Aggiornato lo stanziamento per la GAE {gae}, anno {y:d}, voce {k}")
 
-                    # Delete 'stanziamento' not updated by comeptenza (otherwise residui will add up at every update)
+                    # Cancelliamo gli stanziamenti che non sono stati aggiornati, altrimenti i residui si sommerebbero ad ogni aggiornamento.
                     Stanziamento.objects.filter(Q(gae=gae, esercizio=y) & ~Q(pk__in=new_pk)).delete()
 
-                    # Each stanziamento competenza should be updated with
-                    # modifications in the following years as residui
+                    # Ogni stanziamento di competenza deve essere aggiornato con le modifiche degli anni successivi
+                    # attraverso i residui
 
                     for res_y in range(y + 1, years[-1] + 1, 1):
                         r = sigla.getResidui(gae.name, res_y, y)
 
-                        # Cycle over each 'voce'
+                        # Analizziamo ogni voce di spesa presente
                         for k, v in r.items():
                             try:
                                 voce = VoceSpesa.objects.get(voce=k)
                             except VoceSpesa.DoesNotExist:
-                                # Does not exist. Add 'voce' to database
+                                # La voce non esiste. La aggiungiamo.
                                 voce = VoceSpesa()
                                 voce.voce = k
                                 voce.description = v['descrizione']
                                 voce.save()
 
                             try:
-                                # Update stanziamento
+                                # Cerchiamo lo stanziamento corrispondente se esite
                                 stanziamento = Stanziamento.objects.get(gae=gae, esercizio=y, voce=voce)
 
                             except Stanziamento.DoesNotExist:
-                                # Nessuno stanziamento di compenza sulla voce.
+                                # Se non esiste lo creiamo a zero
                                 stanziamento = Stanziamento()
                                 stanziamento.gae = gae
                                 stanziamento.voce = voce
@@ -135,6 +136,7 @@ class Command(BaseCommand):
                                 stanziamento.pagato = 0.0
                                 stanziamento.da_pagare = 0.0
 
+                            # Aggiorniamo lo stanziamento
                             stanziamento.var_piu += v['esercizi'][y]['var_piu_imp']
                             stanziamento.var_meno += v['esercizi'][y]['var_meno_imp']
                             #stanziamento.assestato = v['esercizi'][y]['assestato'] # NOTE: questo assestato si riferisce allo stanziamento improprio del residuo...
@@ -146,27 +148,31 @@ class Command(BaseCommand):
                             stanziamento.save()
 
                 except Exception as e:
-                    self.logger.error("Failed to update 'stanziamenti' for GAE {0:s} for year {1:d} (Error: {2!s})".format(gae.name, y, e))
+                    self.logger.error(f"Errore nell'aggiornamento degli stanziamenti per la GAE {gae.name} per l'anno {y:d} (Errore: {e})")
 
                 try:
-                    # Get variazioni
+                    # Carichiamo le variazioni alla GAE
                     v = sigla.getVariazioni(gae.name, y)
 
                     for var in v:
-                        # Get Voce
+                        # Cerchiamo la voce di spesa
                         try:
                             voce = VoceSpesa.objects.get(voce=var['voce'])
                         except VoceSpesa.DoesNotExist:
-                            # Does not exist. This should not happen as the voce should have been added in the previous step
-                            self.logger.error("'voce' {0:s} does not exist in database. Something is wrong (GAE: {1:s}, esercizio: {2:d}, variazione: {3:d})".format(var['voce'], gae.name, y, var['numero']))
-                            continue
+                            # La voce di spesa non esiste. Questo può capitare quando la variazione è diretta ad una GAE esterna (e.g. trasferimenti)
+                            voce = VoceSpesa()
+                            voce.voce = var['voce']
+                            voce.description = 'N.D.'
+                            voce.save()
 
                         try:
                             variazione = Variazione.objects.get(gae=gae, data=var['data'], numero=var['numero'], voce=voce)
                             if y < datetime.date.today().year:
-                                # If 'variazione' already exists and is relative to a past year, we can leave it as it will not change
+                                # Se la variazione esiste già ed è relativa ad un anno passato, la possiamo lasciare così com'è perchè
+                                # non può essere stata modificata
                                 continue
                         except Variazione.DoesNotExist:
+                            # La variazione non esiste, la creiamo
                             variazione = Variazione()
                             variazione.gae = gae
                             if var['tipo'] == 'Residuo':
@@ -176,9 +182,9 @@ class Command(BaseCommand):
                             variazione.numero = var['numero']
                             variazione.voce = voce
                             if settings.DEBUG:
-                                self.logger.debug("Adding 'variazione ' {0:d} for gae {1:s} year {2:d} 'voce' {3:s}".format(var['numero'], gae.name, y, var['voce']))
+                                self.logger.debug(f"Aggiungo la variazione {var['numero']:d} per la GAE {gae.name}, anno {y:d}, voce {var['voce']}")
 
-                        # Update variazione if needed
+                        # Aggiorniamo la variazione se necessario
                         variazione.tipo = var['tipo']
                         variazione.stato = var['stato']
                         variazione.riferimenti = var['riferimenti'] if var['riferimenti'] is not None else "None"
@@ -190,27 +196,29 @@ class Command(BaseCommand):
                         variazione.save()
 
                 except Exception as e:
-                     self.logger.error("Failed to update 'variazioni' for GAE {0:s} for year {1:d} (Error: {2!s})".format(gae.name, y, e))
+                     self.logger.error(f"Errore nell'aggiornamento delle variazioni per la GAE {gae.name}, anno {y:d} (Errore: {e})")
 
                 try:
-                    # Get impegni
+                    # Scarichiamo tutti gli impegni
                     impegni = sigla.getImpegni(gae.name, y)
 
                     for im in impegni:
-                        # Get Voce
+                        # Cerchiamo la voce di spesa
                         try:
                             voce = VoceSpesa.objects.get(voce=im['voce'])
                         except VoceSpesa.DoesNotExist:
-                            # Does not exist. This should not happen as the voce should have been added in the previous step
-                            self.logger.error("'voce' {0:s} does not exist in database. Something is wrong (GAE: {1:s}, esercizio: {2:d}, impegno: {3:d})".format(im['voce'], gae.name, y, im['impegno']))
+                            # La voce di spesa non esiste. Questo è un errore e non dovrebbe succedere
+                            # La voce dovrebbe essere stata aggiunta nello step di aggiornamento dei fondi disponibili
+                            self.logger.error(f"La voce {im['voce']} non esiste nel database. Questo non dovrebbe essere possibile (GAE: {gae.name}, esercizio: {y:d}, impegno: {im['impegno']:d})")
                             continue
 
                         try:
                             impegno = Impegno.objects.get(gae=gae, esercizio=y, esercizio_orig=im['esercizio_orig'], numero=im['impegno'])
                             if y < datetime.date.today().year:
-                                # If 'impegno' already exists and is relative to a past year, we can leave it as it will not change
+                                # Se l'impegno esiste già ed è relativo ad un anno precedente, possiamo lasciarlo così com'è perché non può essere cambiato
                                 continue
                         except Impegno.DoesNotExist:
+                            # L'impegno non esiste. Lo aggiungiamo.
                             impegno = Impegno()
                             impegno.gae = gae
                             impegno.esercizio = y
@@ -218,7 +226,7 @@ class Command(BaseCommand):
                             impegno.numero = im['impegno']
                             impegno.voce = voce
                             if settings.DEBUG:
-                                self.logger.debug("Adding 'impegno' {0:d} for gae {1:s} year {2:d} 'voce' {3:s}".format(im['impegno'], gae.name, y, im['voce']))
+                                self.logger.debug(f"Aggiungo l'impegno {im['impegno']:d} per la GAE {gae.name}, anno {y:d}, voce {im['voce']}")
 
                         # Update impegno if needed
                         impegno.description = im['descrizione']
@@ -231,36 +239,36 @@ class Command(BaseCommand):
                         impegno.save()
 
                 except Exception as e:
-                    self.logger.error("Failed to update 'impegni' for GAE {0:s} for year {1:d} (Error: {2!s})".format(gae.name, y, e))
+                    self.logger.error(f"Errore nell'aggiornamento degli impegni per la GAE {gae.name} per l'anno {y:d} (Errore: {e})")
 
             if settings.DEBUG:
-                self.logger.debug("GAE {0:s} done in {1:.2f}s".format(gae.name, time.time() - s))
+                self.logger.debug(f"GAE {gae.name} completata in {time.time() - s:.2f}s")
 
-        # Delete old 'mandati'
+        # Cancelliamo tutti i mandati per ricaricarli
         Mandato.objects.all().delete()
 
-        # Create 'mandati'
+        # Carichiamo i mandati per ciascun impegno registrato
         for im in Impegno.objects.all():
-
             try:
                 if settings.DEBUG:
-                    self.logger.debug("Checking 'impegno' {0!s}".format(im))
+                    self.logger.debug(f"Verifichiamo l'impegno {im}")
                 mandati = sigla.getMandati(im.numero, im.esercizio_orig, im.esercizio)
                 if not len(mandati):
                     continue
 
                 for m in mandati:
-                    # If 'mandato' has not date, skip it as it was not paid
+                    # Se il mandato non ha data lo saltiamo perchè vuol dire che non è stato ancora pagato
                     if m['data'] is None:
                         continue
-                    # If 'mandato' is canceled, ignore
+                    # Se il mandato è annullato lo ignoriamo
                     if m['stato'] == 'A':
                         continue
 
                     try:
                         mandato = Mandato.objects.get(impegno=im, numero=m['numero'])
-                        # We already have a 'mandato' linked to 'impegno' with the same number.
-                        # We have different amounts referring to different invoices, but payed together
+                        # Esiste già un mandato relativo all'impegno con lo stesso numero. Questo vuol dire
+                        # che ci sono più fatture con importi diversi, relative allo stesso impegno, pagate
+                        # con lo stesso mandato. Le sommiamo insieme.
                         mandato.importo += m['importo']
                         mandato.save()
                     except Mandato.DoesNotExist:
@@ -275,7 +283,9 @@ class Command(BaseCommand):
                         mandato.save()
 
                         if settings.DEBUG:
-                            self.logger.debug("Added 'mandato' {0:d} for 'impegno' {1:d}/{2:d}".format(mandato.numero, mandato.impegno.numero, mandato.impegno.esercizio_orig))
+                            self.logger.debug(f"Aggiungo il mandato {mandato.numero:d} per l'impegno {mandato.impegno.numero:d}/{mandato.impegno.esercizio_orig:d}")
 
             except Exception as e:
-                self.logger.error("Failed to get 'mandati' for 'impegno' {0:d}/{1:d} for year {2:d} (Error: {3!s})".format(im.numero, im.esercizio_orig, im.esercizio, e))
+                self.logger.error(f"Errore nel recupero dei mandati per l'impegno {im.numero}/{im.esercizio_orig} per l'anno {im.esercizio:d} (Errore: {e})")
+
+    # TODO: aggiungere un check sugli impegni / mandati dello SplitAccounting per gestire gli impegni pagati su più anni.

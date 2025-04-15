@@ -1,7 +1,7 @@
 import re
 import pandas as pd
 import numpy as np
-
+from django.db.models import Q
 from Tags.templatetags.tr_month import month_num2it
 
 from .models import BankHoliday
@@ -158,7 +158,6 @@ def unserialize_presences(json):
 
 def check_presences_unique(presences):
     dates = []
-    print("CHECK for duplicates!")
     for year, v1 in presences.items():
         for month, v2 in v1.items():
             for i, row in v2.iterrows():
@@ -167,7 +166,6 @@ def check_presences_unique(presences):
                     print("Date {0:s} is duplicated!")
                 else:
                     dates.append(date)
-    print("CHECK done!")
 
 
 def check_bank_holiday(date):
@@ -185,7 +183,8 @@ def check_bank_holiday(date):
 def get_workpackages_fractions(report):
     out = []
     total = 0.0
-    for wp in report.workpackages.all().order_by('workpackage__name'):
+    # NOTE: filtering out WPs with a zero fraction. Easier to filter here that removing unneeded WP reports
+    for wp in report.workpackages.filter(~Q(fraction=0)).order_by('workpackage__name'):
         out.append({'pk': wp.pk, 'wp_pk': wp.workpackage.pk, 'wp': wp.workpackage.name, 'desc': wp.workpackage.desc, 'fraction': wp.fraction})
         total += wp.fraction
     for o in out:
