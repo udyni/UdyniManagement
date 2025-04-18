@@ -188,7 +188,7 @@ class CommentContent(models.Model):
     version = models.IntegerField()
     author = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    text = models.TextField(null=True)
+    text = models.TextField(null=True, blank=False)  # a comment with content null is considered deleted and does not appear in logbook
 
     class Meta:
         # ordering by comment because that way they stay ordered and different versions can be accessed contiguously
