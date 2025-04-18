@@ -70,7 +70,7 @@
               {% endif %}
               <!-- In the future only participants to the experiment will see this button -->
               {% if True %}
-                <a href="{% url 'comment_view' station_id=this_station_id experiment_id=experiment.experiment_id %}"  class="btn btn-sm btn-primary btn-icon-split" aria-label="Show Logbook">
+                <a href="{% url 'logbook_view' station_id=this_station_id experiment_id=experiment.experiment_id %}"  class="btn btn-sm btn-primary btn-icon-split" aria-label="Show Logbook">
                   <span class="icon text-white-50">
                     <i class="fas fa-arrow-right"></i>
                   </span>
