@@ -199,6 +199,7 @@ class ExperimentList(PermissionRequiredMixin, ListViewMenu):
 
     def get_queryset(self):
         station_id = self.kwargs['station_id']
+        station = get_object_or_404(ExperimentalStation, station_id=station_id)
         return Experiment.objects.filter(experimental_station=station_id)
 
     def get_context_data(self, **kwargs):
