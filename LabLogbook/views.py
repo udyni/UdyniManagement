@@ -24,12 +24,16 @@ class SampleList(PermissionRequiredMixin, ListViewMenu):
 
 class SampleCreate(PermissionRequiredMixin, CreateViewMenu):
     model = Sample
-    fields = ['name', 'material', 'substrate', 'manufacturer', 'description', 'reference', 'author']
+    fields = ['name', 'material', 'substrate', 'manufacturer', 'description', 'reference']
     permission_required = 'Sample.sample_manage'
     template_name = "UdyniManagement/generic_form.html"
     
     def get_success_url(self):
         return reverse_lazy('sample_view')
+    
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -39,7 +43,7 @@ class SampleCreate(PermissionRequiredMixin, CreateViewMenu):
 
 class SampleUpdate(PermissionRequiredMixin, UpdateViewMenu):
     model = Sample
-    fields = ['name', 'material', 'substrate', 'manufacturer', 'description', 'reference', 'author']
+    fields = ['name', 'material', 'substrate', 'manufacturer', 'description', 'reference']
     permission_required = 'Sample.sample_manage'
     template_name = "UdyniManagement/generic_form.html"
 
