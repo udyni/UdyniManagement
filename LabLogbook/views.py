@@ -5,7 +5,7 @@ from UdyniManagement.menu import UdyniMenu
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views import View
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
 
 
@@ -316,3 +316,90 @@ class SampleForExperimentRemove(PermissionRequiredMixin, DeleteViewMenu):
         context['message'] = f"Are you sure you want to remove the sample '{context['sampleforexperiment'].sample.name}' from the experiment '{context['sampleforexperiment'].experiment.experiment_id}'?"
         context['back_url'] = self.get_success_url()
         return context
+
+# =============================================
+# EXPERIMENT LOGBOOK
+#
+class LogbookList(View):
+    http_method_names = ['get']
+    template_name = 'LabLogbook/comment_list.html'
+
+    def get(self, request, *args, **kwargs):
+        station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
+        experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
+        # by using select related comment content is available at comment_tree.commentcontent
+        comment_tree = Comment.objects.filter(experiment=experiment).select_related('commentcontent').order_by('tree_id', 'lft')
+        context = {
+            'menu': UdyniMenu().getMenu(request.user),
+            'title': f"Logbook for experiment {experiment.experiment_id}",
+            'back_url' : reverse_lazy('experiment_view', kwargs={'station_id': station.station_id}),
+            'back_url_button_title' : f'Experiments for {station.name}',
+            'station' : station,
+            # this two are necessary for going back to the logbooklist page after operating on a comment
+            'experiment' : experiment,
+            'comment_tree': comment_tree,
+        }
+        return render(request, self.template_name, context)
+
+
+class CommentCreate(View):
+    http_method_names = ['get', 'post']
+    template_name = 'LabLogbook/comment_form.html'
+    
+    def get_experiment_and_back_url(self, request, **kwargs):
+        station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
+        experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
+        back_url = reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id})
+        return experiment, back_url
+
+    def get(self, request, *args, **kwargs):
+        comment_form = CommentForm()
+        comment_content_form = CommentContentForm()
+        experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
+        context = {
+            'menu': UdyniMenu().getMenu(request.user),
+            'title': f"Logbook for experiment {experiment.experiment_id}",
+            'comment_form': comment_form,
+            'comment_content_form': comment_content_form,
+            'back_url' : back_url,
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request, *args, **kwargs):
+        comment_form = CommentForm(request.POST)
+        comment_content_form = CommentContentForm(request.POST)
+        experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
+        
+        if comment_form.is_valid() and comment_content_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.experiment = experiment
+            # measurement, and parent are null when creating a new comment, we don't need to edit them
+            comment.save()
+
+            comment_content = comment_content_form.save(commit=False)
+            comment_content.comment = comment
+            comment_content.version = 1
+            comment_content.author = self.request.user
+            comment_content.save()
+
+            return redirect(back_url)
+
+        context = {
+            'menu': UdyniMenu().getMenu(request.user),
+            'title': f"Logbook for experiment {experiment.experiment_id}",
+            'comment_form': comment_form,
+            'comment_content_form': comment_content_form,
+            'back_url' : back_url,
+        }
+        return render(request, self.template_name, context)
+
+
+
+class CommentUpdate(CreateViewMenu):
+    pass
+
+class CommentReply(CreateViewMenu):
+    pass
+
+class CommentDelete(CreateViewMenu):
+    pass
