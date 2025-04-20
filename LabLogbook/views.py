@@ -406,13 +406,12 @@ class CommentCreate(View):
 
 class CommentUpdate(View):
     '''
-    When a comment is updated a new entry of comment content is created.
-    This entry inherits the characteristic from the previous version of comment content, it has its own author and timestamp.
+    Type and text of the comment can be edited.
     The text can be edited starting from the text of the previous version.
 
-    The type in entry of Comment can be updated.
-    
-    If type and text have not changed you cannot update.
+    When a comment is updated a new entry of comment content is created.
+    If type and text are not changed, it won't be created a new comment if you press save.
+    The new comment inherits the unchanged characteristic from the previous version of comment content, but it has its own author and timestamp.
     '''
     
     http_method_names = ['get', 'post']
