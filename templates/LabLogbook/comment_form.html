@@ -5,27 +5,44 @@
 <div class="card mb-4">
   <div class="card-body">
 
-    <form action="" method="post"{% if enctype %} enctype="{{ enctype }}"{% endif %}>
-    {% csrf_token %}
-      <div>
-        <!-- Here we could add a form for the attachments in the future -->
-        {{ comment_form|crispy }}
-        {{ comment_content_form|crispy }}
-        <button type="submit" class="btn btn-success btn-icon-split" aria-label="Save">
-          <span class="icon text-white-50">
-            <i class="fas fa-floppy-disk"></i>
-          </span>
-          <span class="text">Save</span>
-        </button>
-        <a href="{{ back_url }}" aria-label="Cancel" class="btn btn-danger btn-icon-split">
-          <span class="icon text-white-50">
-            <i class="fas fa-xmark"></i>
-          </span>
-          <span class="text">Cancel</span>
-        </a>
-      </div>
-    </form>
+    {% if machine_generated %}
 
+      <div class="text-center">
+        <!-- The button for editing machine generated comment is not shown in logbook view, this is just in case the link is accessed -->
+        <h1 class="text-gray-900 mb-4">This is a machine generated comment, it cannot be edited.</h1>
+      </div>
+
+      <a href="{{ back_url }}" aria-label="Cancel" class="btn btn-danger btn-icon-split">
+        <span class="icon text-white-50">
+          <i class="fas fa-xmark"></i>
+        </span>
+        <span class="text">Cancel</span>
+      </a>
+    
+    {% else %}
+
+      <form action="" method="post"{% if enctype %} enctype="{{ enctype }}"{% endif %}>
+      {% csrf_token %}
+        <div>
+          <!-- Here we could add a form for the attachments in the future -->
+          {{ comment_form|crispy }}
+          {{ comment_content_form|crispy }}
+          <button type="submit" class="btn btn-success btn-icon-split" aria-label="Save">
+            <span class="icon text-white-50">
+              <i class="fas fa-floppy-disk"></i>
+            </span>
+            <span class="text">Save</span>
+          </button>
+          <a href="{{ back_url }}" aria-label="Cancel" class="btn btn-danger btn-icon-split">
+            <span class="icon text-white-50">
+              <i class="fas fa-xmark"></i>
+            </span>
+            <span class="text">Cancel</span>
+          </a>
+        </div>
+      </form>
+
+    {% endif %}
   </div>
 </div>
 

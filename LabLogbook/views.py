@@ -369,6 +369,9 @@ class CommentCreate(View):
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f'Create comment for experiment {experiment.experiment_id}',
+            # machine generated is used in the update view to block the user for editing special machine generated comment
+            # since create and update view uses the same form here is put to False to make the form accessible from the user
+            'machine_generated': False,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
@@ -397,6 +400,7 @@ class CommentCreate(View):
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f'Create comment for experiment {experiment.experiment_id}',
+            'machine_generated': False,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
@@ -409,6 +413,8 @@ class CommentUpdate(View):
     Type and text of the comment can be edited.
     The text can be edited starting from the text of the previous version.
 
+    Note that comments with author = None are automatically generated and cannot be edited.
+
     When a comment is updated a new entry of comment content is created.
     If type and text are not changed, it won't be created a new comment if you press save.
     The new comment inherits the unchanged characteristic from the previous version of comment content, but it has its own author and timestamp.
@@ -417,11 +423,11 @@ class CommentUpdate(View):
     http_method_names = ['get', 'post']
     template_name = 'LabLogbook/comment_form.html'
     
-    def get_experiment_and_back_url(self, request, **kwargs):
+    def get_back_url(self, request, **kwargs):
         station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
         back_url = reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id})
-        return experiment, back_url
+        return back_url
     
     def get_comment_and_latest_commentcontent(self, request, **kwargs):
         comment = get_object_or_404(Comment, comment_id=kwargs['pk'])
@@ -443,11 +449,13 @@ class CommentUpdate(View):
 
         comment_form = CommentForm(initial=initial_comment_form)
         comment_content_form = CommentContentForm(initial=initial_comment_content_form)
-
-        experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
+        # if the comment is machine generated (has author NULL) it cannot be edited
+        machine_generated = True if comment_content_previous_version.author is None else False
+        back_url = self.get_back_url(request, **kwargs)
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f"Edit comment {comment_previous_version.comment_id}",
+            'machine_generated': machine_generated,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
@@ -459,7 +467,9 @@ class CommentUpdate(View):
 
         comment_form = CommentForm(request.POST)
         comment_content_form = CommentContentForm(request.POST)
-        experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
+        # if the comment is machine generated (has author NULL) it cannot be edited
+        machine_generated = True if comment_content_previous_version.author is None else False
+        back_url = self.get_back_url(request, **kwargs)
         
         if comment_form.is_valid() and comment_content_form.is_valid():
             # The data gets updated update the the comment and its content, otherwise when save is pressed just go back
@@ -479,6 +489,7 @@ class CommentUpdate(View):
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f"Edit comment {comment_previous_version.comment_id}",
+            'machine_generated': machine_generated,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
