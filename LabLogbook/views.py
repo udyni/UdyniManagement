@@ -520,7 +520,7 @@ class CommentReply(CreateViewMenu):
         experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Reply to comment for experiment {experiment.experiment_id}",
+            'title': f"Reply to comment {comment_to_reply.comment_id}",
             'comment_to_reply' : comment_to_reply,
             'comment_content_to_reply' : comment_content_to_reply,
             'comment_form': comment_form,
@@ -553,7 +553,7 @@ class CommentReply(CreateViewMenu):
 
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Reply to comment for experiment {experiment.experiment_id}",
+            'title': f"Reply to comment {comment_to_reply.comment_id}",
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
