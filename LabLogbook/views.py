@@ -337,7 +337,8 @@ class LogbookList(View):
             to_attr='all_versions'
         )
 
-        comment_tree = Comment.objects.filter(experiment=experiment).order_by('comment_id').prefetch_related(comment_content_prefetch)
+        #comment_tree = Comment.objects.filter(experiment=experiment).order_by('comment_id').prefetch_related(comment_content_prefetch)
+        comment_tree = Comment.objects.filter(experiment=experiment).order_by('parent').prefetch_related(comment_content_prefetch)
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f"Logbook for experiment {experiment.experiment_id}",
@@ -447,7 +448,7 @@ class CommentUpdate(View):
         experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Edit comment for experiment {experiment.experiment_id}",
+            'title': f"Edit comment {comment_previous_version.comment_id}",
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
@@ -469,7 +470,7 @@ class CommentUpdate(View):
                 comment_previous_version.save()
 
                 comment_content = comment_content_form.save(commit=False)
-                comment_content.comment = comment_previous_version  # refers to the same comment as before
+                comment_content.comment = comment_previous_version  # refers to the same comment
                 comment_content.version = comment_content_previous_version.version + 1  # new version number
                 comment_content.author = self.request.user
                 comment_content.save()
@@ -478,15 +479,86 @@ class CommentUpdate(View):
 
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Edit comment for experiment {experiment.experiment_id}",
+            'title': f"Edit comment {comment_previous_version.comment_id}",
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
         }
         return render(request, self.template_name, context)
 
+
 class CommentReply(CreateViewMenu):
-    pass
+    '''
+    When replying to a comment a new comment and comment content gets created.
+    The new comment has the previous one as its parent.
+    '''
+    http_method_names = ['get', 'post']
+    template_name = 'LabLogbook/comment_reply_form.html'
+    
+    def get_experiment_and_back_url(self, request, **kwargs):
+        station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
+        experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
+        back_url = reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id})
+        return experiment, back_url
+    
+    def get_comment_and_latest_commentcontent(self, request, **kwargs):
+        '''
+        Used for obtaining the comment to put as parent of the new one and to print
+        to screen the comment content the user want to reply to.
+        '''
+        comment = get_object_or_404(Comment, comment_id=kwargs['pk'])
+        # comments are already saved with descendant order of version, no need to order by '-version'
+        comment_content = CommentContent.objects.filter(comment=kwargs['pk']).first()
+        return comment, comment_content
+
+
+    def get(self, request, *args, **kwargs):
+        comment_to_reply, comment_content_to_reply = self.get_comment_and_latest_commentcontent(request, **kwargs)
+        comment_form = CommentForm()
+        comment_content_form = CommentContentForm()
+
+        experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
+        context = {
+            'menu': UdyniMenu().getMenu(request.user),
+            'title': f"Reply to comment for experiment {experiment.experiment_id}",
+            'comment_to_reply' : comment_to_reply,
+            'comment_content_to_reply' : comment_content_to_reply,
+            'comment_form': comment_form,
+            'comment_content_form': comment_content_form,
+            'back_url' : back_url,
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request, *args, **kwargs):
+        comment_to_reply, comment_content_to_reply = self.get_comment_and_latest_commentcontent(request, **kwargs)
+
+        comment_form = CommentForm(request.POST)
+        comment_content_form = CommentContentForm(request.POST)
+        experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
+        
+        if comment_form.is_valid() and comment_content_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.experiment = comment_to_reply.experiment
+            comment.measurement = comment_to_reply.measurement  # measurment and parent depends on the parent comment
+            comment.parent = comment_to_reply
+            comment.save()
+
+            comment_content = comment_content_form.save(commit=False)
+            comment_content.comment = comment
+            comment_content.version = 1
+            comment_content.author = self.request.user
+            comment_content.save()
+
+            return redirect(back_url)
+
+        context = {
+            'menu': UdyniMenu().getMenu(request.user),
+            'title': f"Reply to comment for experiment {experiment.experiment_id}",
+            'comment_form': comment_form,
+            'comment_content_form': comment_content_form,
+            'back_url' : back_url,
+        }
+        return render(request, self.template_name, context)
 
 class CommentDelete(CreateViewMenu):
     pass
