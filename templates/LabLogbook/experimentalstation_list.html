@@ -13,7 +13,7 @@
 {% regroup object_list by laboratory as exp_station_grouped_by_lab_list %}
 
 {% for laboratory in laboratory_list %}
-  <div class="card shadow mb-4">
+  <div class="card mb-4">
     <div class="card-header">
       <h6 class="m-0 font-weight-bold text-primary"> Name: {{ laboratory.name }}</h6>
       <h6 class="m-0 font-weight-bold text-primary"> Description: {{ laboratory.description }}</h6>
