@@ -358,7 +358,7 @@ class CommentCreate(View):
         experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Logbook for experiment {experiment.experiment_id}",
+            'title': f'Create comment for experiment {experiment.experiment_id}',
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
@@ -386,7 +386,7 @@ class CommentCreate(View):
 
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Logbook for experiment {experiment.experiment_id}",
+            'title': f'Create comment for experiment {experiment.experiment_id}',
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
