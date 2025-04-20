@@ -5,6 +5,7 @@ from UdyniManagement.menu import UdyniMenu
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views import View
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
 
@@ -328,7 +329,15 @@ class LogbookList(View):
         station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
         # by using select related comment content is available at comment_tree.commentcontent
-        comment_tree = Comment.objects.filter(experiment=experiment).select_related('commentcontent').order_by('tree_id', 'lft')
+        #comment_tree = Comment.objects.filter(experiment=experiment).select_related('commentcontent').order_by('tree_id', 'lft')
+
+        comment_content_prefetch = Prefetch(
+            'commentcontent_set',
+            queryset=CommentContent.objects.all(),
+            to_attr='all_versions'
+        )
+
+        comment_tree = Comment.objects.filter(experiment=experiment).order_by('comment_id').prefetch_related(comment_content_prefetch)
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f"Logbook for experiment {experiment.experiment_id}",
