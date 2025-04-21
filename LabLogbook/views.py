@@ -505,11 +505,11 @@ class CommentReply(CreateViewMenu):
     http_method_names = ['get', 'post']
     template_name = 'LabLogbook/comment_reply_form.html'
     
-    def get_experiment_and_back_url(self, request, **kwargs):
+    def get_back_url(self, request, **kwargs):
         station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
         back_url = reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id})
-        return experiment, back_url
+        return back_url
     
     def get_comment_and_latest_commentcontent(self, request, **kwargs):
         '''
@@ -527,7 +527,7 @@ class CommentReply(CreateViewMenu):
         comment_form = CommentForm()
         comment_content_form = CommentContentForm()
 
-        experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
+        back_url = self.get_back_url(request, **kwargs)
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f"Reply to comment {comment_to_reply.comment_id}",
@@ -544,7 +544,7 @@ class CommentReply(CreateViewMenu):
 
         comment_form = CommentForm(request.POST)
         comment_content_form = CommentContentForm(request.POST)
-        experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
+        back_url = self.get_back_url(request, **kwargs)
         
         if comment_form.is_valid() and comment_content_form.is_valid():
             comment = comment_form.save(commit=False)
