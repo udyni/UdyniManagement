@@ -354,9 +354,14 @@ class CommentContentHistory(View):
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
         comment = get_object_or_404(Comment, comment_id=kwargs['pk'])
 
+        title = f'Content history for comment {comment.comment_id}'
+        # The comment history of deleted comments can be accessed (provided a link) but the user must know that the comment is no more visible
+        if comment.latest_content.text == None:
+            title += ' (DELETED)'
+
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Content history for comment {comment.comment_id}",
+            'title': title,
             'back_url' : reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id}),
             'back_url_button_title' : f'Logbook for experiment {experiment.experiment_id}',
             'comment': comment,
