@@ -178,6 +178,14 @@ class Comment(MPTTModel):
         default_permissions = ()
         # TODO permissions will be added in the future
 
+    @property
+    def latest_content(self):
+        return self.commentcontent_set.order_by('-version').first()
+    
+    @property
+    def content_history(self):
+        return self.commentcontent_set.order_by('version')
+    
     def __str__(self):
         return f"Comment {self.comment_id} for experiment: {self.experiment}, reply to: {self.parent}"
 
