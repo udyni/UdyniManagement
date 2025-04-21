@@ -624,29 +624,38 @@ class CommentDelete(CreateViewMenu):
     
     def get_comment(self, **kwargs):
         return get_object_or_404(Comment, comment_id=kwargs['pk'])
+    
+    def delete_comment(self, comment: Comment):
+        '''Function used for creating a new comment content for the comment passed'''
+        comment_content = CommentContent()
+        comment_content.comment = comment  # the referred comment does not change
+        comment_content.version = comment.latest_content.version + 1  # update version number
+        comment_content.author = self.request.user
+        comment_content.text = None
+        comment_content.save()
 
     def get(self, request, *args, **kwargs):
         station, experiment, back_url = self.get_station_experiment_back_url(**kwargs)
-        comment = self.get_comment(**kwargs)
-        latest_content = comment.latest_content
+        comment_to_delete = self.get_comment(**kwargs)
+        latest_content = comment_to_delete.latest_content
 
         # if the comment is machine generated (has author NULL) it cannot be deleted
         machine_generated = True if latest_content.author is None else False
         # if the comment has been deleted (has text NULL) it cannot be deleted again
         deleted = True if latest_content.text is None else False
         
-        message = f'''Are you sure you want to delete comment {comment.comment_id} from the logbook?
-            \nYou will be able to continue seeing its content version history at this link:\n'''
+        message = f'''Are you sure you want to delete comment {comment_to_delete.comment_id} and all its replies from the logbook?
+            You will be able to continue seeing its content version history at this link: '''
         
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Delete comment {comment.comment_id}",
+            'title': f"Delete comment {comment_to_delete.comment_id}",
             
             # used for the message
             'message' : message,
             'station_id' : station.station_id,
             'experiment_id': experiment.experiment_id,
-            'pk' : comment.comment_id,
+            'pk' : comment_to_delete.comment_id,
 
             'machine_generated': machine_generated,
             'deleted': deleted,
@@ -656,37 +665,34 @@ class CommentDelete(CreateViewMenu):
     
     def post(self, request, *args, **kwargs):
         station, experiment, back_url = self.get_station_experiment_back_url(**kwargs)
-        comment = self.get_comment(**kwargs)
-        latest_content = comment.latest_content
+        comment_to_delete = self.get_comment(**kwargs)
 
         # if the comment is machine generated (has author NULL) it cannot be edited
-        machine_generated = True if latest_content.author is None else False
+        machine_generated = True if comment_to_delete.latest_content.author is None else False
         # if the comment has been deleted (has text NULL) it cannot be edited
-        deleted = True if latest_content.text is None else False
+        deleted = True if comment_to_delete.latest_content.text is None else False
         
-        if not machine_generated and not deleted:
-        
-            comment_content = CommentContent()
-            comment_content.comment = comment  # the referred comment does not change
-            comment_content.version = latest_content.version + 1  # update version number
-            comment_content.author = self.request.user
-            comment_content.text = None
-            comment_content.save()
+        if not machine_generated and not deleted: # proceed deleting the comment
+            self.delete_comment(comment_to_delete)
+            for child_comment in comment_to_delete.get_descendants(): # delete also the comment descendants (if they are not already been deleted)
+                deleted = True if child_comment.latest_content.text is None else False
+                if not deleted:
+                    self.delete_comment(child_comment)
 
             return redirect(back_url)
 
-        message = f'''Are you sure you want to delete comment {comment.comment_id} from the logbook?
+        message = f'''Are you sure you want to delete comment {comment_to_delete.comment_id} and all its replies from the logbook?
             You will be able to continue seeing its content version history at this link: '''
         
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Delete comment {comment.comment_id}",
+            'title': f"Delete comment {comment_to_delete.comment_id}",
             
             # used for the message
             'message' : message,
             'station_id' : station.station_id,
             'experiment_id': experiment.experiment_id,
-            'pk' : comment.comment_id,
+            'pk' : comment_to_delete.comment_id,
             
             'machine_generated': machine_generated,
             'deleted': deleted,
