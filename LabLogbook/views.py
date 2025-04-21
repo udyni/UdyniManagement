@@ -494,7 +494,7 @@ class CommentUpdate(View):
         # if the comment is machine generated (has author NULL) it cannot be edited
         machine_generated = True if latest_content.author is None else False
         
-        if comment_form.is_valid() and comment_content_form.is_valid():
+        if comment_form.is_valid() and comment_content_form.is_valid() and not machine_generated:
             # The data gets updated update the the comment and its content, otherwise when save is pressed just go back
             comment_type_inserted_in_form = comment_form.cleaned_data['type']
             if comment_type_inserted_in_form != comment.type:
