@@ -373,21 +373,23 @@ class CommentCreate(View):
     http_method_names = ['get', 'post']
     template_name = 'LabLogbook/comment_form.html'
     
-    def get_experiment_and_back_url(self, request, **kwargs):
+    def get_experiment_and_back_url(self, **kwargs):
         station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
         back_url = reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id})
         return experiment, back_url
 
     def get(self, request, *args, **kwargs):
+        experiment, back_url = self.get_experiment_and_back_url(**kwargs)
+
         comment_form = CommentForm()
         comment_content_form = CommentContentForm()
-        experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
+
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f'Create comment for experiment {experiment.experiment_id}',
             # machine generated is used in the update view to block the user for editing special machine generated comment
-            # since create and update view uses the same form here is put to False to make the form accessible from the user
+            # since create and update view uses the same form, here machine_generated is put to False to make the form accessible to the user when creating a comment
             'machine_generated': False,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
@@ -396,15 +398,21 @@ class CommentCreate(View):
         return render(request, self.template_name, context)
     
     def post(self, request, *args, **kwargs):
+        experiment, back_url = self.get_experiment_and_back_url(**kwargs)
+
         comment_form = CommentForm(request.POST)
         comment_content_form = CommentContentForm(request.POST)
-        experiment, back_url = self.get_experiment_and_back_url(request, **kwargs)
         
         if comment_form.is_valid() and comment_content_form.is_valid():
             comment = comment_form.save(commit=False)
             comment.experiment = experiment
             # measurement, and parent are null when creating a new comment, we don't need to edit them
             comment.save()
+
+            # This instruction is present because when a new tree is created the tree_id of already existing comment could change,
+            # this would move entire comment trees in the logbook making the user experience inconsistent, so it's better to have this little overhead.
+            # Note that this only applies when a new comment is created, so editing comments does not have any overhead.
+            Comment.objects.rebuild()
 
             comment_content = comment_content_form.save(commit=False)
             comment_content.comment = comment
