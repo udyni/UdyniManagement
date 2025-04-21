@@ -321,6 +321,10 @@ class SampleForExperimentRemove(PermissionRequiredMixin, DeleteViewMenu):
 # =============================================
 # EXPERIMENT LOGBOOK
 #
+def get_comment_tree(experiment):
+    return Comment.objects.filter(experiment=experiment).order_by('tree_id', 'lft')
+
+
 class LogbookList(View):
     http_method_names = ['get']
     template_name = 'LabLogbook/comment_list.html'
@@ -329,7 +333,6 @@ class LogbookList(View):
         station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
 
-        comment_tree = Comment.objects.filter(experiment=experiment).order_by('tree_id', 'lft')
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f"Logbook for experiment {experiment.experiment_id}",
@@ -337,7 +340,7 @@ class LogbookList(View):
             'back_url_button_title' : f'Experiments for {station.name}',
             'station_id' : station.station_id, # this is used as an argument in various urls in the template
             'experiment_id' : experiment.experiment_id, # this is used as an argument in various urls in the template
-            'comment_tree': comment_tree,
+            'comment_tree': get_comment_tree(experiment),
         }
         return render(request, self.template_name, context)
 
