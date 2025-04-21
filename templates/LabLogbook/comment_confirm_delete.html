@@ -25,7 +25,7 @@
     {% else %}
 
         <p>{{ message }}
-        <a href="{% url 'comment_content_history' station_id=station_id experiment_id=experiment_id pk=pk %}" aria-label="See history"><i class="fas fa-link" aria-hidden="true"></i></a>
+        <a href="{% url 'comment_content_history' station_id=station_id experiment_id=experiment_id pk=pk %}" target="_blank" aria-label="See history"><i class="fas fa-link" aria-hidden="true"></i></a>
         <div>
             You can look at the history of deleted comments by pressing 'Show deleted comments' button.
         </div>
