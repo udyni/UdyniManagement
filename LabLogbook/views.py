@@ -525,42 +525,40 @@ class CommentUpdate(View):
         return render(request, self.template_name, context)
 
 
-class CommentReply(CreateViewMenu):
+class CommentReply(View):
     '''
     When replying to a comment a new comment and comment content gets created.
-    The new comment has the previous one as its parent.
+    Note that comments with author = None are machine generated and cannot be replied to.
     '''
     http_method_names = ['get', 'post']
     template_name = 'LabLogbook/comment_reply_form.html'
     
-    def get_back_url(self, request, **kwargs):
+    def get_back_url(self, **kwargs):
         station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
-        back_url = reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id})
-        return back_url
+        return reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id})
     
-    def get_comment_and_latest_commentcontent(self, request, **kwargs):
+    def get_comment(self, **kwargs):
         '''
-        Used for obtaining the comment to put as parent of the new one and to print
-        to screen the comment content the user want to reply to.
+        Used for obtaining the comment the user want to reply to.
         '''
-        comment = get_object_or_404(Comment, comment_id=kwargs['pk'])
-        # comments are already saved with descendant order of version, no need to order by '-version'
-        comment_content = CommentContent.objects.filter(comment=kwargs['pk']).first()
-        return comment, comment_content
-
+        return get_object_or_404(Comment, comment_id=kwargs['pk'])
 
     def get(self, request, *args, **kwargs):
-        comment_to_reply, comment_content_to_reply = self.get_comment_and_latest_commentcontent(request, **kwargs)
+        back_url = self.get_back_url(**kwargs)
+        comment_to_reply = self.get_comment(**kwargs)
+
         comment_form = CommentForm()
         comment_content_form = CommentContentForm()
 
-        back_url = self.get_back_url(request, **kwargs)
+        deleted = True if comment_to_reply.latest_content.text is None else False
+
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f"Reply to comment {comment_to_reply.comment_id}",
+            'deleted': deleted,
             'comment_to_reply' : comment_to_reply,
-            'comment_content_to_reply' : comment_content_to_reply,
+            'comment_content_to_reply' : comment_to_reply.latest_content,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
@@ -568,18 +566,25 @@ class CommentReply(CreateViewMenu):
         return render(request, self.template_name, context)
     
     def post(self, request, *args, **kwargs):
-        comment_to_reply, comment_content_to_reply = self.get_comment_and_latest_commentcontent(request, **kwargs)
+        back_url = self.get_back_url(**kwargs)
+        comment_to_reply = self.get_comment(**kwargs)
 
         comment_form = CommentForm(request.POST)
         comment_content_form = CommentContentForm(request.POST)
-        back_url = self.get_back_url(request, **kwargs)
+
+        deleted = True if comment_to_reply.latest_content.text is None else False
         
-        if comment_form.is_valid() and comment_content_form.is_valid():
+        if comment_form.is_valid() and comment_content_form.is_valid() and not deleted:
             comment = comment_form.save(commit=False)
             comment.experiment = comment_to_reply.experiment
-            comment.measurement = comment_to_reply.measurement  # measurment and parent depends on the parent comment
-            comment.parent = comment_to_reply
+            comment.measurement = comment_to_reply.measurement  # measurment and experiment are the same of the parent comment
+            comment.parent = comment_to_reply  # the parent comment is the one the user has replied to
             comment.save()
+
+            # This instruction is present because when a new tree is created the tree_id of already existing comment could change,
+            # this would move entire comment trees in the logbook making the user experience inconsistent, so it's better to have this little overhead.
+            # Note that this only applies when a new comment is created, so editing comments does not have any overhead.
+            Comment.objects.rebuild()
 
             comment_content = comment_content_form.save(commit=False)
             comment_content.comment = comment
@@ -592,11 +597,13 @@ class CommentReply(CreateViewMenu):
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f"Reply to comment {comment_to_reply.comment_id}",
+            'deleted': deleted,
+            'comment_to_reply' : comment_to_reply,
+            'comment_content_to_reply' : comment_to_reply.latest_content,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
         }
         return render(request, self.template_name, context)
 
-class CommentDelete(CreateViewMenu):
-    pass
+
