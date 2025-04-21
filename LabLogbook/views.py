@@ -343,6 +343,25 @@ class LogbookList(View):
             'comment_tree': get_comment_tree(experiment),
         }
         return render(request, self.template_name, context)
+    
+
+class CommentContentHistory(View):
+    http_method_names = ['get']
+    template_name = 'LabLogbook/comment_content_history_list.html'
+
+    def get(self, request, *args, **kwargs):
+        station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
+        experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
+        comment = get_object_or_404(Comment, comment_id=kwargs['pk'])
+
+        context = {
+            'menu': UdyniMenu().getMenu(request.user),
+            'title': f"Content history for comment {comment.comment_id}",
+            'back_url' : reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id}),
+            'back_url_button_title' : f'Logbook for experiment {experiment.experiment_id}',
+            'comment': comment,
+        }
+        return render(request, self.template_name, context)
 
 
 class CommentCreate(View):
