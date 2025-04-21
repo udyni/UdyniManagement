@@ -328,25 +328,15 @@ class LogbookList(View):
     def get(self, request, *args, **kwargs):
         station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
-        # by using select related comment content is available at comment_tree.commentcontent
-        #comment_tree = Comment.objects.filter(experiment=experiment).select_related('commentcontent').order_by('tree_id', 'lft')
 
-        comment_content_prefetch = Prefetch(
-            'commentcontent_set',
-            queryset=CommentContent.objects.all(),
-            to_attr='all_versions'
-        )
-
-        #comment_tree = Comment.objects.filter(experiment=experiment).order_by('comment_id').prefetch_related(comment_content_prefetch)
-        comment_tree = Comment.objects.filter(experiment=experiment).order_by('parent').prefetch_related(comment_content_prefetch)
+        comment_tree = Comment.objects.filter(experiment=experiment).order_by('tree_id', 'lft')
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f"Logbook for experiment {experiment.experiment_id}",
             'back_url' : reverse_lazy('experiment_view', kwargs={'station_id': station.station_id}),
             'back_url_button_title' : f'Experiments for {station.name}',
-            'station' : station,
-            # this two are necessary for going back to the logbooklist page after operating on a comment
-            'experiment' : experiment,
+            'station_id' : station.station_id, # this is used as an argument in various urls in the template
+            'experiment_id' : experiment.experiment_id, # this is used as an argument in various urls in the template
             'comment_tree': comment_tree,
         }
         return render(request, self.template_name, context)
