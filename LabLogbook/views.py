@@ -607,3 +607,89 @@ class CommentReply(View):
         return render(request, self.template_name, context)
 
 
+class CommentDelete(CreateViewMenu):
+    '''
+    When a comment is deleted a new comment content with text = NULL get added as the final version of the content.
+    Note that comments with author = None are machine generated and cannot be deleted.
+    Note that comments with text = None have been deleted and cannot be deleted again.
+    '''
+    
+    http_method_names = ['get', 'post']
+    template_name = 'LabLogbook/comment_confirm_delete.html'
+    
+    def get_station_experiment_back_url(self, **kwargs):
+        station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
+        experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
+        return station, experiment, reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id})
+    
+    def get_comment(self, **kwargs):
+        return get_object_or_404(Comment, comment_id=kwargs['pk'])
+
+    def get(self, request, *args, **kwargs):
+        station, experiment, back_url = self.get_station_experiment_back_url(**kwargs)
+        comment = self.get_comment(**kwargs)
+        latest_content = comment.latest_content
+
+        # if the comment is machine generated (has author NULL) it cannot be deleted
+        machine_generated = True if latest_content.author is None else False
+        # if the comment has been deleted (has text NULL) it cannot be deleted again
+        deleted = True if latest_content.text is None else False
+        
+        message = f'''Are you sure you want to delete comment {comment.comment_id} from the logbook?
+            \nYou will be able to continue seeing its content version history at this link:\n'''
+        
+        context = {
+            'menu': UdyniMenu().getMenu(request.user),
+            'title': f"Delete comment {comment.comment_id}",
+            
+            # used for the message
+            'message' : message,
+            'station_id' : station.station_id,
+            'experiment_id': experiment.experiment_id,
+            'pk' : comment.comment_id,
+
+            'machine_generated': machine_generated,
+            'deleted': deleted,
+            'back_url' : back_url,
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request, *args, **kwargs):
+        station, experiment, back_url = self.get_station_experiment_back_url(**kwargs)
+        comment = self.get_comment(**kwargs)
+        latest_content = comment.latest_content
+
+        # if the comment is machine generated (has author NULL) it cannot be edited
+        machine_generated = True if latest_content.author is None else False
+        # if the comment has been deleted (has text NULL) it cannot be edited
+        deleted = True if latest_content.text is None else False
+        
+        if not machine_generated and not deleted:
+        
+            comment_content = CommentContent()
+            comment_content.comment = comment  # the referred comment does not change
+            comment_content.version = latest_content.version + 1  # update version number
+            comment_content.author = self.request.user
+            comment_content.text = None
+            comment_content.save()
+
+            return redirect(back_url)
+
+        message = f'''Are you sure you want to delete comment {comment.comment_id} from the logbook?
+            You will be able to continue seeing its content version history at this link: '''
+        
+        context = {
+            'menu': UdyniMenu().getMenu(request.user),
+            'title': f"Delete comment {comment.comment_id}",
+            
+            # used for the message
+            'message' : message,
+            'station_id' : station.station_id,
+            'experiment_id': experiment.experiment_id,
+            'pk' : comment.comment_id,
+            
+            'machine_generated': machine_generated,
+            'deleted': deleted,
+            'back_url' : back_url,
+        }
+        return render(request, self.template_name, context)
