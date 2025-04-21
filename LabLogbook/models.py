@@ -184,7 +184,7 @@ class Comment(MPTTModel):
     
     @property
     def content_history(self):
-        return self.commentcontent_set.order_by('version')
+        return self.commentcontent_set.order_by('-version')
     
     def __str__(self):
         return f"Comment {self.comment_id} for experiment: {self.experiment}, reply to: {self.parent}"
