@@ -354,7 +354,7 @@ class CommentContentHistory(View):
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
         comment = get_object_or_404(Comment, comment_id=kwargs['pk'])
 
-        title = f'Content history for comment {comment.comment_id}'
+        title = f'Content version history for comment {comment.comment_id}'
         # The comment history of deleted comments can be accessed (provided a link) but the user must know that the comment is no more visible
         if comment.latest_content.text == None:
             title += ' (DELETED)'
