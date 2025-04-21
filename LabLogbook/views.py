@@ -435,51 +435,48 @@ class CommentCreate(View):
 
 class CommentUpdate(View):
     '''
-    Type and text of the comment can be edited.
+    Type and text of comments can be edited.
     The text can be edited starting from the text of the previous version.
 
-    Note that comments with author = None are automatically generated and cannot be edited.
+    Note that comments with author = None are machine generated and cannot be edited.
 
-    When a comment is updated a new entry of comment content is created.
-    If type and text are not changed, it won't be created a new comment if you press save.
+    When a comment text is updated a new entry of comment content is created.
+    If text is not changed, it won't be created a new entry of comment content if you press save. You can change the type without creating a new version.
     The new comment inherits the unchanged characteristic from the previous version of comment content, but it has its own author and timestamp.
     '''
     
     http_method_names = ['get', 'post']
     template_name = 'LabLogbook/comment_form.html'
     
-    def get_back_url(self, request, **kwargs):
+    def get_back_url(self, **kwargs):
         station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
         back_url = reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id})
         return back_url
     
-    def get_comment_and_latest_commentcontent(self, request, **kwargs):
-        comment = get_object_or_404(Comment, comment_id=kwargs['pk'])
-        # comments are already saved with descendant order of version, no need to order by '-version'
-        comment_content = CommentContent.objects.filter(comment=kwargs['pk']).first()
-        return comment, comment_content
-
+    def get_comment(self, **kwargs):
+        return get_object_or_404(Comment, comment_id=kwargs['pk'])
 
     def get(self, request, *args, **kwargs):
-        comment_previous_version, comment_content_previous_version = self.get_comment_and_latest_commentcontent(request, **kwargs)
+        back_url = self.get_back_url(**kwargs)
+        comment = self.get_comment(**kwargs)
+        latest_content = comment.latest_content
 
         initial_comment_form = {
-            'type': comment_previous_version.type,  # get the type currently assigned to the comment
+            'type': comment.type,  # get the type currently assigned to the comment
         }
-        # get the text from the previous version of the comment, increment version by one
         initial_comment_content_form = {
-            'text': comment_content_previous_version.text,  # start with the old text
+            'text': latest_content.text, # get the text from the previous version of the comment
         }
-
         comment_form = CommentForm(initial=initial_comment_form)
         comment_content_form = CommentContentForm(initial=initial_comment_content_form)
+
         # if the comment is machine generated (has author NULL) it cannot be edited
-        machine_generated = True if comment_content_previous_version.author is None else False
-        back_url = self.get_back_url(request, **kwargs)
+        machine_generated = True if latest_content.author is None else False
+        
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Edit comment {comment_previous_version.comment_id}",
+            'title': f"Edit comment {comment.comment_id}",
             'machine_generated': machine_generated,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
@@ -488,24 +485,28 @@ class CommentUpdate(View):
         return render(request, self.template_name, context)
     
     def post(self, request, *args, **kwargs):
-        comment_previous_version, comment_content_previous_version = self.get_comment_and_latest_commentcontent(request, **kwargs)
+        back_url = self.get_back_url(**kwargs)
+        comment = self.get_comment(**kwargs)
+        latest_content = comment.latest_content
 
         comment_form = CommentForm(request.POST)
         comment_content_form = CommentContentForm(request.POST)
+
         # if the comment is machine generated (has author NULL) it cannot be edited
-        machine_generated = True if comment_content_previous_version.author is None else False
-        back_url = self.get_back_url(request, **kwargs)
+        machine_generated = True if latest_content.author is None else False
         
         if comment_form.is_valid() and comment_content_form.is_valid():
             # The data gets updated update the the comment and its content, otherwise when save is pressed just go back
-            if comment_form.cleaned_data['type'] != comment_previous_version.type or comment_content_form.cleaned_data['text'] != comment_content_previous_version.text:
+            comment_type_inserted_in_form = comment_form.cleaned_data['type']
+            if comment_type_inserted_in_form != comment.type:
                 # if the type has changed get the object comment and update it
-                comment_previous_version.type = comment_form.cleaned_data['type'] # here i use the value stored in the form in order to update the comment
-                comment_previous_version.save()
+                comment.type = comment_type_inserted_in_form # here i use the value stored in the form in order to update the comment
+                comment.save()
 
+            if comment_content_form.cleaned_data['text'] != latest_content.text:
                 comment_content = comment_content_form.save(commit=False)
-                comment_content.comment = comment_previous_version  # refers to the same comment
-                comment_content.version = comment_content_previous_version.version + 1  # new version number
+                comment_content.comment = comment  # the referred comment does not change
+                comment_content.version = latest_content.version + 1  # update version number
                 comment_content.author = self.request.user
                 comment_content.save()
 
@@ -513,7 +514,7 @@ class CommentUpdate(View):
 
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Edit comment {comment_previous_version.comment_id}",
+            'title': f"Edit comment {comment.comment_id}",
             'machine_generated': machine_generated,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
