@@ -21,11 +21,20 @@
   </a>
 </div>
 
+<a href="?show_deleted={% if not show_deleted %}true{% else %}false{% endif %}" 
+   class="btn btn-primary mb-4">
+    {% if show_deleted %}
+        Hide deleted comments
+    {% else %}
+        Show deleted comments
+    {% endif %}
+</a>
+
 {% for comment in comment_tree %}
   {% with latest=comment.latest_content %}
 
     <!-- editing the last value in widthration you can increase the left distance between a comment and its parent -->
-    {% if latest.text %}
+    {% if latest.text or show_deleted %}
       <div style="margin-left: {% widthratio comment.level 1 8 %}em;">
         <div class="card mb-4">
           <div class="card-header">
@@ -51,9 +60,11 @@
                 <tr>
                   <td>{{ latest.text }}</td>
                   <td class="col-actions">
-                    <a href="{% url 'comment_mod' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
-                    <a href="{% url 'comment_reply' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Reply"><i class="fas fa-reply" aria-hidden="true"></i></a>
-                    <a href="{% url 'comment_del' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
+                    {% if latest.text %}
+                      <a href="{% url 'comment_mod' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
+                      <a href="{% url 'comment_reply' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Reply"><i class="fas fa-reply" aria-hidden="true"></i></a>
+                      <a href="{% url 'comment_del' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
+                    {% endif %}
                     <a href="{% url 'comment_content_history' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="See history"><i class="fas fa-history" aria-hidden="true"></i></a>
                   </td>
                 </tr>

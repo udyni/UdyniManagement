@@ -330,6 +330,7 @@ class LogbookList(View):
     template_name = 'LabLogbook/comment_list.html'
 
     def get(self, request, *args, **kwargs):
+        show_deleted = request.GET.get('show_deleted') == 'true' # pressing a button is possible to show deleted comments
         station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
 
@@ -341,6 +342,7 @@ class LogbookList(View):
             'station_id' : station.station_id, # this is used as an argument in various urls in the template
             'experiment_id' : experiment.experiment_id, # this is used as an argument in various urls in the template
             'comment_tree': get_comment_tree(experiment),
+            'show_deleted': show_deleted,
         }
         return render(request, self.template_name, context)
     
