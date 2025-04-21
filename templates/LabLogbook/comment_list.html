@@ -33,20 +33,31 @@
 {% for comment in comment_tree %}
   {% with latest=comment.latest_content %}
 
-    <!-- editing the last value in widthration you can increase the left distance between a comment and its parent -->
+    <!-- show a comment only if it has not been deleted or if the user has pressed the Show deleted comments button -->
     {% if latest.text or show_deleted %}
+      <!-- editing the last value in widthration you can increase the left distance between a comment and its parent -->
       <div style="margin-left: {% widthratio comment.level 1 8 %}em;">
         <div class="card mb-4">
           <div class="card-header">
+            
             {% if not latest.author %}
               <h6 class="m-0 font-weight-bold text-primary">AUTO GENERATED COMMENT</h6>
             {% endif %}
             <h6 class="m-0 font-weight-bold text-primary">Comment type: {{ comment.type }}</h6>
+            
             {% if comment.measurement %}
               <h6 class="m-0 font-weight-bold text-primary">Refers to measurment: {{ comment.measurment }}: </h6>
             {% endif %}
+            
             <h6 class="m-0 font-weight-bold text-primary">ID: {{ comment.comment_id }} - Content version: {{ latest.version }}</h6>
-            <h6 class="m-0 font-weight-bold text-primary">Last edited by {{ latest.author }} - {{ latest.timestamp }}</h6>
+
+            <!-- Show if the comment has been deleted -->
+            {% if not latest.text %}
+              <h6 class="m-0 font-weight-bold text-primary">Deleted by {{ latest.author }} - {{ latest.timestamp }}</h6>
+            {% else %}
+              <h6 class="m-0 font-weight-bold text-primary">Last edited by {{ latest.author }} - {{ latest.timestamp }}</h6>
+            {% endif %}
+
           </div>
           <div class="card-body table-responsive">
             <table cellspacing="0" cellpadding="0" class="table table-sm table-hover reporting">
@@ -58,7 +69,13 @@
               </thead>
               <tbody>
                 <tr>
+                  <!-- Show if the comment has been deleted -->
+                  {% if not latest.text %}
+                    <div class="alert alert-warning">Deleted comment</div>
+                    <td>{{ comment.latest_text_before_deletion }}</td>
+                  {% else %}
                   <td>{{ latest.text }}</td>
+                  {% endif %}
                   <td class="col-actions">
                     {% if latest.text %}
                       <a href="{% url 'comment_mod' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
