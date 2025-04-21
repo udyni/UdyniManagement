@@ -186,6 +186,14 @@ class Comment(MPTTModel):
     def content_history(self):
         return self.commentcontent_set.order_by('-version')
     
+    @property
+    def latest_text_before_deletion(self):
+        latest_text_before_deletion = None
+        for content in self.commentcontent_set.order_by('version'):
+            if content.text is not None:
+                latest_text_before_deletion = content.text
+        return latest_text_before_deletion
+    
     def __str__(self):
         return f"Comment {self.comment_id} for experiment: {self.experiment}, reply to: {self.parent}"
 
