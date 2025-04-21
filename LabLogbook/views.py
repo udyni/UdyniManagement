@@ -270,7 +270,7 @@ class ExperimentDelete(PermissionRequiredMixin, DeleteViewMenu):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = "Delete experiment"
-        context['message'] = f"Are you sure you want to delete the experiment {context['experiment']}"
+        context['message'] = f"Are you sure you want to delete the experiment {context['experiment']} ?"
         context['back_url'] = self.get_success_url()
         return context
 
