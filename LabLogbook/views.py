@@ -435,6 +435,7 @@ class CommentUpdate(View):
     The text can be edited starting from the text of the previous version.
 
     Note that comments with author = None are machine generated and cannot be edited.
+    Note that comments with text = None have been deleted and cannot be edited.
 
     When a comment text is updated a new entry of comment content is created.
     If text is not changed, it won't be created a new entry of comment content if you press save. You can change the type without creating a new version.
@@ -468,11 +469,14 @@ class CommentUpdate(View):
 
         # if the comment is machine generated (has author NULL) it cannot be edited
         machine_generated = True if latest_content.author is None else False
+        # if the comment has been deleted (has text NULL) it cannot be edited
+        deleted = True if latest_content.text is None else False
         
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f"Edit comment {comment.comment_id}",
             'machine_generated': machine_generated,
+            'deleted': deleted,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
@@ -489,8 +493,10 @@ class CommentUpdate(View):
 
         # if the comment is machine generated (has author NULL) it cannot be edited
         machine_generated = True if latest_content.author is None else False
+        # if the comment has been deleted (has text NULL) it cannot be edited
+        deleted = True if latest_content.text is None else False
         
-        if comment_form.is_valid() and comment_content_form.is_valid() and not machine_generated:
+        if comment_form.is_valid() and comment_content_form.is_valid() and not machine_generated and not deleted:
             # The data gets updated update the the comment and its content, otherwise when save is pressed just go back
             comment_type_inserted_in_form = comment_form.cleaned_data['type']
             if comment_type_inserted_in_form != comment.type:
@@ -511,6 +517,7 @@ class CommentUpdate(View):
             'menu': UdyniMenu().getMenu(request.user),
             'title': f"Edit comment {comment.comment_id}",
             'machine_generated': machine_generated,
+            'deleted': deleted,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
