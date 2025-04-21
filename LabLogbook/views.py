@@ -388,9 +388,6 @@ class CommentCreate(View):
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f'Create comment for experiment {experiment.experiment_id}',
-            # machine generated is used in the update view to block the user for editing special machine generated comment
-            # since create and update view uses the same form, here machine_generated is put to False to make the form accessible to the user when creating a comment
-            'machine_generated': False,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
@@ -425,7 +422,6 @@ class CommentCreate(View):
         context = {
             'menu': UdyniMenu().getMenu(request.user),
             'title': f'Create comment for experiment {experiment.experiment_id}',
-            'machine_generated': False,
             'comment_form': comment_form,
             'comment_content_form': comment_content_form,
             'back_url' : back_url,
