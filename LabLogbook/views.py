@@ -451,8 +451,7 @@ class CommentUpdate(View):
     def get_back_url(self, **kwargs):
         station = get_object_or_404(ExperimentalStation, station_id=kwargs['station_id'])
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
-        back_url = reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id})
-        return back_url
+        return reverse_lazy('logbook_view', kwargs={'station_id': station.station_id, 'experiment_id': experiment.experiment_id})
     
     def get_comment(self, **kwargs):
         return get_object_or_404(Comment, comment_id=kwargs['pk'])
