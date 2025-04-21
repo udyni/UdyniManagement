@@ -38,6 +38,7 @@ urlpatterns = [
     path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/modify', views.CommentUpdate.as_view(), name='comment_mod'),
     path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/reply', views.CommentReply.as_view(), name='comment_reply'),
     path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/delete', views.CommentDelete.as_view(), name='comment_del'),
+    path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/history', views.CommentContentHistory.as_view(), name='comment_content_history'),
 
 ]
 
