@@ -35,7 +35,11 @@
                 <h6 class="m-0 font-weight-bold text-primary">Refers to measurment: {{ comment_to_reply.measurment }}: </h6>
               {% endif %}
               <h6 class="m-0 font-weight-bold text-primary">ID: {{ comment_to_reply.comment_id }} - Content version: {{ comment_content_to_reply.version }}</h6>
-              <h6 class="m-0 font-weight-bold text-primary">Last edited by {{ comment_content_to_reply.author }} - {{ comment_content_to_reply.timestamp }}</h6>
+              {% if not comment_content_to_reply.author %}
+                <h6 class="m-0 font-weight-bold text-primary">Auto generated - {{ comment_content_to_reply.timestamp }}</h6>
+              {% else %}
+                <h6 class="m-0 font-weight-bold text-primary">Last edited by {{ comment_content_to_reply.author }} - {{ comment_content_to_reply.timestamp }}</h6>
+              {% endif %}
             </div>
             <div class="card-body table-responsive">
               <table cellspacing="0" cellpadding="0" class="table table-sm table-hover reporting">

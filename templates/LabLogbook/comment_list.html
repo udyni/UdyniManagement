@@ -52,10 +52,14 @@
             <h6 class="m-0 font-weight-bold text-primary">ID: {{ comment.comment_id }} - Content version: {{ latest.version }}</h6>
 
             <!-- Show if the comment has been deleted -->
-            {% if not latest.text %}
-              <h6 class="m-0 font-weight-bold text-primary">Deleted by {{ latest.author }} - {{ latest.timestamp }}</h6>
+            {% if not latest.author %}
+              <h6 class="m-0 font-weight-bold text-primary">Auto generated - {{ latest.timestamp }}</h6>
             {% else %}
-              <h6 class="m-0 font-weight-bold text-primary">Last edited by {{ latest.author }} - {{ latest.timestamp }}</h6>
+              {% if not latest.text %}
+                <h6 class="m-0 font-weight-bold text-primary">Deleted by {{ latest.author }} - {{ latest.timestamp }}</h6>
+              {% else %}
+                <h6 class="m-0 font-weight-bold text-primary">Last edited by {{ latest.author }} - {{ latest.timestamp }}</h6>
+              {% endif %}
             {% endif %}
 
           </div>

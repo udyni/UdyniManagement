@@ -23,7 +23,16 @@
         <h6 class="m-0 font-weight-bold text-primary">Refers to measurment: {{ comment.measurment }}: </h6>
       {% endif %}
       <h6 class="m-0 font-weight-bold text-primary">ID: {{ comment.comment_id }} - Content version: {{ comment_content.version }}</h6>
-      <h6 class="m-0 font-weight-bold text-primary">Edited by {{ comment_content.author }} - {{ comment_content.timestamp }}</h6>
+      
+      {% if not comment_content.author %}
+        <h6 class="m-0 font-weight-bold text-primary">Auto generated - {{ comment_content.timestamp }}</h6>
+      {% else %}
+        {% if not comment_content.text %}
+          <h6 class="m-0 font-weight-bold text-primary">Deleted by {{ comment_content.author }} - {{ comment_content.timestamp }}</h6>
+        {% else %}
+          <h6 class="m-0 font-weight-bold text-primary">Edited by {{ comment_content.author }} - {{ comment_content.timestamp }}</h6>
+        {% endif %}
+      {% endif %}
     </div>
     <div class="card-body table-responsive">
       <table cellspacing="0" cellpadding="0" class="table table-sm table-hover reporting">
