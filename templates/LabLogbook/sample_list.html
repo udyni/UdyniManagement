@@ -35,7 +35,7 @@
               <td>{{ sample.manufacturer }}</td>
               <td>{{ sample.description }}</td>
               <td>{{ sample.reference }}</td>
-              <td>{{ sample.author.email }}</td>
+              <td>{{ sample.author }} - Email: {{ sample.author.email }}</td>
               <td class="col-actions">
                 {% if can_edit %}
                   <a href="{% url 'sample_mod' pk=sample.sample_id %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
