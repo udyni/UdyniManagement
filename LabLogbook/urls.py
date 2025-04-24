@@ -1,4 +1,5 @@
 from . import views
+from . import views_api
 from UdyniManagement.views import EmptyView
 
 from django.urls import path, reverse_lazy
@@ -40,6 +41,11 @@ urlpatterns = [
     path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/delete', views.CommentDelete.as_view(), name='comment_del'),
     path('experimentalstations/<int:station_id>/experiments/<int:experiment_id>/logbook/<int:pk>/history', views.CommentContentHistory.as_view(), name='comment_content_history'),
 
+    # APIs
+    path('rest/experimentalstations', views_api.ExperimentalStationListAPI.as_view(), name='api_get_experimentalstation_list'),
+    path('rest/experimentalstations/<int:station_id>/experiments', views_api.ExperimentListAPI.as_view(), name='api_get_experiment_list'),
+    path('rest/experiments/<int:experiment_id>/samples', views_api.ExperimentSampleListAPI.as_view(), name='api_get_experiment_sample_list'),
+    path('rest/experiments/<int:experiment_id>/measurements', views_api.MeasurementAndFileCreate.as_view(), name='api_post_measurement_and_file_add'),
 ]
 
 menu = {
