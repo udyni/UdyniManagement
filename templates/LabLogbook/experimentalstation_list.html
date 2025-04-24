@@ -50,7 +50,7 @@
                 <tr>
                   <td>{{ experimentalstation.name }}</td>
                   <td>{{ experimentalstation.description }}</td>
-                  <td>{{ experimentalstation.responsible.email }}</td>
+                  <td>{{experimentalstation.responsible}} - Email: {{ experimentalstation.responsible.email }}</td>
                   <td>{{ experimentalstation.status }}</td>
                   <td class="col-actions">
                     {% if can_edit_station %}
