@@ -106,6 +106,7 @@ class Experiment(models.Model):
     status = models.CharField(max_length=10, choices=POSSIBLE_STATUSES)
 
     class Meta:
+        ordering = ['experiment_id']
         default_permissions = ()
         permissions = [
             ('experiment_view', 'View list of experiments'),
