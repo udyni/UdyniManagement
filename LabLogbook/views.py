@@ -356,7 +356,7 @@ class CommentContentHistory(View):
         experiment = get_object_or_404(Experiment, experiment_id=kwargs['experiment_id'])
         comment = get_object_or_404(Comment, comment_id=kwargs['pk'])
 
-        title = f'Content version history for comment {comment.comment_id}'
+        title = f'Content version history, Comment ID: {comment.comment_id}'
         # The comment history of deleted comments can be accessed (provided a link) but the user must know that the comment is no more visible
         if comment.latest_content.text == None:
             title += ' (DELETED)'
@@ -476,7 +476,7 @@ class CommentUpdate(View):
         
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Edit comment {comment.comment_id}",
+            'title': f"Edit comment, Comment ID: {comment.comment_id}",
             'machine_generated': machine_generated,
             'deleted': deleted,
             'comment_form': comment_form,
@@ -517,7 +517,7 @@ class CommentUpdate(View):
 
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Edit comment {comment.comment_id}",
+            'title': f"Edit comment, Comment ID: {comment.comment_id}",
             'machine_generated': machine_generated,
             'deleted': deleted,
             'comment_form': comment_form,
@@ -557,7 +557,7 @@ class CommentReply(View):
 
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Reply to comment {comment_to_reply.comment_id}",
+            'title': f"Reply to comment, Comment ID: {comment_to_reply.comment_id}",
             'deleted': deleted,
             'comment_to_reply' : comment_to_reply,
             'comment_content_to_reply' : comment_to_reply.latest_content,
@@ -598,7 +598,7 @@ class CommentReply(View):
 
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Reply to comment {comment_to_reply.comment_id}",
+            'title': f"Reply to comment, Comment ID: {comment_to_reply.comment_id}",
             'deleted': deleted,
             'comment_to_reply' : comment_to_reply,
             'comment_content_to_reply' : comment_to_reply.latest_content,
@@ -646,12 +646,12 @@ class CommentDelete(CreateViewMenu):
         # if the comment has been deleted (has text NULL) it cannot be deleted again
         deleted = True if latest_content.text is None else False
         
-        message = f'''Are you sure you want to delete comment {comment_to_delete.comment_id} and all its replies from the logbook?
+        message = f'''Are you sure you want to delete comment with Comment ID: {comment_to_delete.comment_id} and all its replies from the logbook?
             You will be able to continue seeing its content version history at this link: '''
         
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Delete comment {comment_to_delete.comment_id}",
+            'title': f"Delete comment, Comment ID: {comment_to_delete.comment_id}",
             
             # used for the message
             'message' : message,
@@ -683,12 +683,12 @@ class CommentDelete(CreateViewMenu):
 
             return redirect(back_url)
 
-        message = f'''Are you sure you want to delete comment {comment_to_delete.comment_id} and all its replies from the logbook?
+        message = f'''Are you sure you want to delete comment with Comment ID: {comment_to_delete.comment_id} and all its replies from the logbook?
             You will be able to continue seeing its content version history at this link: '''
         
         context = {
             'menu': UdyniMenu().getMenu(request.user),
-            'title': f"Delete comment {comment_to_delete.comment_id}",
+            'title': f"Delete comment, Comment ID: {comment_to_delete.comment_id}",
             
             # used for the message
             'message' : message,
