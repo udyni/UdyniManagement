@@ -51,7 +51,7 @@ class MeasurementCreateAPITest(TestCase):
 
         # Store client and URL
         self.client = Client()
-        self.url = reverse('api_post_measurement', kwargs={'experiment_id': self.experiment.experiment_id})  # Update this name
+        self.url = reverse('api_post_measurement', kwargs={'experiment_id': self.experiment.experiment_id})
 
     def test_create_measurement_success(self):
         start_time = now().isoformat()
