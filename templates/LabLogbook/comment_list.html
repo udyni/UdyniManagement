@@ -41,7 +41,7 @@
           <div class="card-header">
             
             {% if not latest.author %}
-              <h6 class="m-0 font-weight-bold text-primary">AUTO GENERATED COMMENT</h6>
+              <h6 class="m-0 font-weight-bold" style="color: #c0392b;">AUTO GENERATED COMMENT</h6>
             {% endif %}
             <h6 class="m-0 font-weight-bold text-primary">Comment type: {{ comment.type }}</h6>
             
@@ -81,10 +81,15 @@
                   <td style="white-space: pre-wrap;">{{ latest.text }}</td>
                   {% endif %}
                   <td class="col-actions">
+                    <!-- Show edit and delete option only for comments that are not machine generated -->
                     {% if latest.text %}
-                      <a href="{% url 'comment_mod' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
+                      {% if latest.author %}
+                        <a href="{% url 'comment_mod' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Modify"><i class="fas fa-pencil" aria-hidden="true"></i></a>
+                      {% endif %}
                       <a href="{% url 'comment_reply' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Reply"><i class="fas fa-reply" aria-hidden="true"></i></a>
-                      <a href="{% url 'comment_del' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
+                      {% if latest.author %}
+                        <a href="{% url 'comment_del' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="Delete"><i class="fas fa-trash-can" aria-hidden="true"></i></a>
+                      {% endif %}
                     {% endif %}
                     <a href="{% url 'comment_content_history' station_id=station_id experiment_id=experiment_id pk=comment.comment_id %}" aria-label="See history"><i class="fas fa-history" aria-hidden="true"></i></a>
                   </td>

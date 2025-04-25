@@ -28,7 +28,7 @@
           <div class="card mb-4">
             <div class="card-header">
               {% if not comment_content_to_reply.author %}
-                <h6 class="m-0 font-weight-bold text-primary">AUTO GENERATED COMMENT</h6>
+                <h6 class="m-0 font-weight-bold" style="color: #c0392b;">AUTO GENERATED COMMENT</h6>
               {% endif %}
               <h6 class="m-0 font-weight-bold text-primary">Comment type: {{ comment_to_reply.type }}</h6>
               {% if comment_to_reply.measurement %}
