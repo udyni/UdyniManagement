@@ -22,7 +22,7 @@
       {% if comment.measurement %}
         <h6 class="m-0 font-weight-bold text-primary">Refers to measurment: {{ comment.measurment }}: </h6>
       {% endif %}
-      <h6 class="m-0 font-weight-bold text-primary">ID: {{ comment.comment_id }} - Content version: {{ comment_content.version }}</h6>
+      <h6 class="m-0 font-weight-bold text-primary">Comment ID: {{ comment.comment_id }} - Content version: {{ comment_content.version }}</h6>
       
       {% if not comment_content.author %}
         <h6 class="m-0 font-weight-bold text-primary">Auto generated - {{ comment_content.timestamp }}</h6>
