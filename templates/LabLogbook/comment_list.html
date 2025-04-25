@@ -46,7 +46,7 @@
             <h6 class="m-0 font-weight-bold text-primary">Comment type: {{ comment.type }}</h6>
             
             {% if comment.measurement %}
-              <h6 class="m-0 font-weight-bold text-primary">Refers to measurment: {{ comment.measurment }}: </h6>
+              <h6 class="m-0 font-weight-bold text-primary">Refers Measurement ID: {{ comment.measurement.measurement_id }} </h6>
             {% endif %}
             
             <h6 class="m-0 font-weight-bold text-primary">Comment ID: {{ comment.comment_id }} - Content version: {{ latest.version }}</h6>
@@ -76,9 +76,9 @@
                   <!-- Show if the comment has been deleted -->
                   {% if not latest.text %}
                     <div class="alert alert-warning">Deleted comment</div>
-                    <td>{{ comment.latest_text_before_deletion }}</td>
+                    <td style="white-space: pre-wrap;">{{ comment.latest_text_before_deletion }}</td>
                   {% else %}
-                  <td>{{ latest.text }}</td>
+                  <td style="white-space: pre-wrap;">{{ latest.text }}</td>
                   {% endif %}
                   <td class="col-actions">
                     {% if latest.text %}
