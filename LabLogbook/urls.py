@@ -3,7 +3,7 @@ from . import views_api
 from UdyniManagement.views import EmptyView
 
 from django.urls import path, reverse_lazy
-
+from django.views.decorators.csrf import csrf_exempt
 
 
 urlpatterns = [
@@ -43,9 +43,11 @@ urlpatterns = [
 
     # APIs
     path('rest/experimentalstations', views_api.ExperimentalStationListAPI.as_view(), name='api_get_experimentalstation_list'),
-    path('rest/experimentalstations/<int:station_id>/experiments', views_api.ExperimentListAPI.as_view(), name='api_get_experiment_list'),
-    path('rest/experiments/<int:experiment_id>/samples', views_api.ExperimentSampleListAPI.as_view(), name='api_get_experiment_sample_list'),
-    path('rest/experiments/<int:experiment_id>/measurements', views_api.MeasurementAndFileCreate.as_view(), name='api_post_measurement_and_file_add'),
+    path('rest/experimentalstations/<int:station_id>/experiments', views_api.ExperimentForStationListAPI.as_view(), name='api_get_experiment_for_station_list'),
+    path('rest/experiments/<int:experiment_id>/samples', views_api.SampleForExperimentListAPI.as_view(), name='api_get_sample_for_experiment_list'),
+
+    # This API given a json file creates an instance of Measurement, for each file in the measurement creates an instance of File, then create a Comment with CommentContent
+    path('rest/experiments/<int:experiment_id>/add_measurement', csrf_exempt(views_api.MeasurementCreateAPI.as_view()), name='api_post_measurement'),
 ]
 
 menu = {
