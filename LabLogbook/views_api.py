@@ -194,6 +194,7 @@ class MeasurementCreateAPI(View):
                 measurement=measurement,
                 type='ACQUISITION',
             )
+            Comment.objects.rebuild()
 
             # Auto-generate CommentContent for comment about the measurement
             comment_content = CommentContent.objects.create(
