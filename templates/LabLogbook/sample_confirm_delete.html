@@ -9,13 +9,13 @@
 
       {% if sample_used_in_experiments %}
         <div class="alert alert-warning" role="alert">
-          This sample cannot be deleted since it's used in experiments with IDs: {{ experiments_that_use_the_sample }}.
+          Sample {{ sample }} cannot be deleted since it's used in experiments with IDs: {{ experiments_that_use_the_sample }}.
         </div>
       {% endif %}
 
       {% if sample_used_in_measurements %}
         <div class="alert alert-warning" role="alert">
-          This sample cannot be deleted since it's used in measurements with IDs: {{ measurements_that_use_the_sample }}.
+          Sample {{ sample }} cannot be deleted since it's used in measurements with IDs: {{ measurements_that_use_the_sample }}.
         </div>
       {% endif %}
 
