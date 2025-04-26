@@ -7,18 +7,18 @@
 
     {% if machine_generated or deleted %}
 
-      <div class="text-center">
-        <!-- The button for editing machine generated or deleted comment is not shown in logbook view, this is just in case the link is accessed -->
-        {% if machine_generated %}
-          <div class="alert alert-warning" role="alert">
-            This is a machine generated comment, it cannot be edited.
-          </div>
-        {% else %}
-          <div class="alert alert-warning" role="alert">
-            This comment has been deleted from the logbook, it cannot be edited.
-          </div>
-        {% endif %}
-      </div>
+      
+      <!-- The button for editing machine generated or deleted comment is not shown in logbook view, this is just in case the link is accessed -->
+      {% if machine_generated %}
+        <div class="alert alert-warning" role="alert">
+          This is a machine generated comment, it cannot be edited.
+        </div>
+      {% else %}
+        <div class="alert alert-warning" role="alert">
+          This comment has been deleted from the logbook, it cannot be edited.
+        </div>
+      {% endif %}
+    
 
       <a href="{{ back_url }}" aria-label="Cancel" class="btn btn-danger btn-icon-split">
         <span class="icon text-white-50">
