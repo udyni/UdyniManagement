@@ -170,12 +170,16 @@ class MeasurementCreateAPI(View):
             except SampleForExperiment.DoesNotExist:
                 return JsonResponse({'error': '"sample_id" in "measurement" is not related to one of the samples associated to the specified experiment.'}, status=404)
             
-            
-            # Check if the file in file_paths are not already present in the File table
+
+            # Check if the file in file_paths are not already present in the File table (if they are it means that they have been saved under a different measurement)
             already_saved_files = list(File.objects.all().values_list('path', flat=True))
+            error_files = []
             for path in file_paths:
                 if path in already_saved_files:
-                    return JsonResponse({'error': f'"{path}" in "file_paths" is already present in the database.'}, status=404)
+                    error_files.append(path)
+            if error_files:
+                return JsonResponse({'error': f'The files {error_files} in "file_paths" are already present in the database.'}, status=404)
+            
             
 
             # Create Measurement
