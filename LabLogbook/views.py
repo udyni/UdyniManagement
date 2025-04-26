@@ -136,14 +136,20 @@ class LaboratoryUpdate(PermissionRequiredMixin, UpdateViewMenu):
 class LaboratoryDelete(PermissionRequiredMixin, DeleteViewMenu):
     model = Laboratory
     permission_required = 'Laboratory.laboratory_manage'
-    template_name = "UdyniManagement/confirm_delete.html"
+    template_name = "LabLogbook/laboratory_confirm_delete.html"
 
     def get_success_url(self):
         return reverse_lazy('lab_and_experimentalstation_view')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = "Delete laboratory"
+
+        laboratory_id = self.kwargs['pk']
+        laboratory = get_object_or_404(Laboratory, laboratory_id=laboratory_id)
+        experimental_stations_in_the_lab = ExperimentalStation.objects.filter(laboratory=laboratory).values_list('name', flat=True)
+
+        context['title'] = f"Delete laboratory"
+        context['experimental_stations_in_the_lab'] = list(experimental_stations_in_the_lab)
         context['message'] = f"Are you sure you want to delete the laboratory: {context['laboratory']}?"
         context['back_url'] = self.get_success_url()
         return context
