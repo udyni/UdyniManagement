@@ -113,7 +113,8 @@ class MeasurementCreateAPI(View):
         text = f'Measurement ID: {measurement.measurement_id} for Experiment ID: {measurement.experiment.experiment_id}.\n'
         text += f'Start time: {measurement.start_time}\n'
         text += f'End time: {measurement.end_time}\n'
-        text += f'Sample ID: {measurement.sample.sample_id}, Name: {measurement.sample.name}\n'
+        text += f'Sample ID: {measurement.sample.sample_id}\n'
+        text += f'Sample name (at the time of the measurement): {measurement.sample.name}\n'
         text += f'Generated files:\n'
         files = File.objects.filter(measurement=measurement)
         for file in files:
