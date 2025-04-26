@@ -64,7 +64,7 @@ class ExperimentalStation(models.Model):
 
     station_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    laboratory = models.ForeignKey(Laboratory, on_delete=models.CASCADE)
+    laboratory = models.ForeignKey(Laboratory, on_delete=models.PROTECT)
     description = models.TextField()
     responsible = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
     status = models.CharField(max_length=17, choices=POSSIBLE_STATUSES)
