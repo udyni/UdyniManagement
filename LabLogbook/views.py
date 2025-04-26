@@ -60,14 +60,25 @@ class SampleUpdate(PermissionRequiredMixin, UpdateViewMenu):
 class SampleDelete(PermissionRequiredMixin, DeleteViewMenu):
     model = Sample
     permission_required = 'Sample.sample_manage'
-    template_name = "UdyniManagement/confirm_delete.html"
+    template_name = "LabLogbook/sample_confirm_delete.html"
 
     def get_success_url(self):
         return reverse_lazy('sample_view')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        sample_id = self.kwargs['pk']
+        sample = get_object_or_404(Sample, sample_id=sample_id)
+        experiments_that_use_the_sample = SampleForExperiment.objects.filter(sample=sample).values_list('experiment_id', flat=True)
+        measurements_that_use_the_sample = Measurement.objects.filter(sample=sample).values_list('measurement_id', flat=True)
+
+
         context['title'] = "Delete sample"
+        context['sample_used_in_experiments'] = experiments_that_use_the_sample.exists()
+        context['experiments_that_use_the_sample'] = list(experiments_that_use_the_sample)
+        context['sample_used_in_measurements'] = measurements_that_use_the_sample.exists()
+        context['measurements_that_use_the_sample'] = list(measurements_that_use_the_sample)
         context['message'] = f"Are you sure you want to delete the sample: {context['sample']}?"
         context['back_url'] = self.get_success_url()
         return context
