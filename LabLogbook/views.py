@@ -74,7 +74,7 @@ class SampleDelete(PermissionRequiredMixin, DeleteViewMenu):
         measurements_that_use_the_sample = Measurement.objects.filter(sample=sample).values_list('measurement_id', flat=True)
 
 
-        context['title'] = f"Delete sample {context['sample']}"
+        context['title'] = "Delete sample"
         context['sample_used_in_experiments'] = experiments_that_use_the_sample.exists()
         context['experiments_that_use_the_sample'] = list(experiments_that_use_the_sample)
         context['sample_used_in_measurements'] = measurements_that_use_the_sample.exists()
