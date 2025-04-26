@@ -282,11 +282,24 @@ class SampleForExperimentAdd(PermissionRequiredMixin, CreateViewMenu):
     model = SampleForExperiment
     fields = ['sample']
     permission_required = 'Experiment.experiment_manage'
-    template_name = "UdyniManagement/generic_form.html"
+    template_name = "LabLogbook/sample_for_experiment_form.html"
     
     def get_success_url(self):
         station_id = self.kwargs['station_id']
         return reverse_lazy('experiment_view', kwargs={'station_id': station_id})
+    
+    def get_form(self, *args):
+        form = super().get_form(*args)
+        experiment_id = self.kwargs['experiment_id']
+        experiment = get_object_or_404(Experiment, experiment_id=experiment_id)
+
+        # Get all samples already associated with this experiment
+        used_samples = SampleForExperiment.objects.filter(experiment=experiment).values_list('sample_id', flat=True)
+        
+        # Show only samples NOT already used
+        form.fields['sample'].queryset = Sample.objects.exclude(sample_id__in=used_samples)
+
+        return form
     
     def form_valid(self, form):
         experiment_id = self.kwargs['experiment_id']
@@ -297,8 +310,14 @@ class SampleForExperimentAdd(PermissionRequiredMixin, CreateViewMenu):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         experiment_id = self.kwargs['experiment_id']
-        experiment = Experiment.objects.get(experiment_id=experiment_id)  # here we must query for the experiment id since it's not in context
+        experiment = get_object_or_404(Experiment, experiment_id=experiment_id)  # here we must query for the experiment id since it's not in context
+
+        # Get all samples NOT already used with this experiment
+        used_samples = SampleForExperiment.objects.filter(experiment=experiment).values_list('sample_id', flat=True)
+        available_samples = Sample.objects.exclude(sample_id__in=used_samples)
+
         context['title'] = f"Add existing sample to experiement {experiment.experiment_id}"
+        context['no_available_samples'] = not available_samples.exists()
         context['back_url'] = self.get_success_url()
         return context
     
