@@ -7,9 +7,10 @@
 
     {% if deleted %}
 
-      <div class="text-center">
-        <!-- The button for replying to a deleted comment is not shown in logbook view, this is just in case the link is accessed -->
-        <h1 class="text-gray-900 mb-4">This comment has been deleted from the logbook, it cannot be replied to.</h1>
+      
+      <!-- The button for replying to a deleted comment is not shown in logbook view, this is just in case the link is accessed -->
+      <div class="alert alert-warning" role="alert">
+        This comment has been deleted from the logbook, it cannot be replied to.
       </div>
 
       <a href="{{ back_url }}" aria-label="Cancel" class="btn btn-danger btn-icon-split">
