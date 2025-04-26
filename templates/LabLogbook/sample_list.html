@@ -16,6 +16,7 @@
       <table cellspacing="0" cellpadding="0" class="table table-sm table-hover reporting">
         <thead>
           <tr>
+            <th>Sample ID</th>
             <th>Name</th>
             <th>Material</th>
             <th>Substrate</th>
@@ -29,6 +30,7 @@
         <tbody>
           {% for sample in object_list %}
             <tr>
+              <td>{{ sample.sample_id }}</td>
               <td>{{ sample.name }}</td>
               <td>{{ sample.material }}</td>
               <td>{{ sample.substrate }}</td>
