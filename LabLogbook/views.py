@@ -314,10 +314,10 @@ class SampleForExperimentAdd(PermissionRequiredMixin, CreateViewMenu):
 
         # Get all samples NOT already used with this experiment
         used_samples = SampleForExperiment.objects.filter(experiment=experiment).values_list('sample_id', flat=True)
-        available_samples = Sample.objects.exclude(sample_id__in=used_samples)
+        not_used_samples = Sample.objects.exclude(sample_id__in=used_samples)
 
         context['title'] = f"Add existing sample to experiement {experiment.experiment_id}"
-        context['no_available_samples'] = not available_samples.exists()
+        context['all_samples_used'] = not not_used_samples.exists()
         context['back_url'] = self.get_success_url()
         return context
     
