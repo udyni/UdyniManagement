@@ -284,7 +284,7 @@ class ExperimentUpdate(PermissionRequiredMixin, UpdateViewMenu):
 class ExperimentDelete(PermissionRequiredMixin, DeleteViewMenu):
     model = Experiment
     permission_required = 'Experiment.experiment_manage'
-    template_name = "UdyniManagement/confirm_delete.html"
+    template_name = "LabLogbook/experiment_confirm_delete.html"
 
     def get_success_url(self):
         station_id = self.kwargs['station_id']
@@ -292,7 +292,13 @@ class ExperimentDelete(PermissionRequiredMixin, DeleteViewMenu):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        experiment_id = self.kwargs['pk']
+        experiment = get_object_or_404(Experiment, experiment_id=experiment_id)
+        measurements_for_experiment = Measurement.objects.filter(experiment=experiment).values_list('measurement_id', flat=True)
+
         context['title'] = "Delete experiment"
+        context['measurements_for_experiment'] = list(measurements_for_experiment)
         context['message'] = f"Are you sure you want to delete the experiment {context['experiment']} ?"
         context['back_url'] = self.get_success_url()
         return context
