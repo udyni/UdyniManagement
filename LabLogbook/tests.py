@@ -1,11 +1,19 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.utils.timezone import now, timedelta
+from django.contrib.auth import get_user_model
 from .models import Laboratory, ExperimentalStation, Sample, Experiment, SampleForExperiment
 import json
 
+UserModel = get_user_model()
+
 class MeasurementCreateAPITest(TestCase):
     def setUp(self):
+
+        # Create User
+        self.user = UserModel.objects.create_user(username='testuser', password='12345')
+        # login = self.client.login(username='testuser', password='12345')
+
         # Create Laboratory
         self.lab = Laboratory.objects.create(
             name='Test Lab',
@@ -18,7 +26,7 @@ class MeasurementCreateAPITest(TestCase):
             name='Station A',
             laboratory=self.lab,
             description='Station description',
-            responsible=None,
+            responsible=self.user,
             status='AVAILABLE'
         )
 
@@ -30,7 +38,7 @@ class MeasurementCreateAPITest(TestCase):
             manufacturer='My Sample manufacturer',
             description='My sample description',
             reference='NFFA-DI',
-            author=None
+            author=self.user
         )
 
         # Create Experiment
@@ -39,7 +47,7 @@ class MeasurementCreateAPITest(TestCase):
             project=None,
             reference='NFFA-DI',
             description='Experiment description',
-            responsible=None,
+            responsible=self.user,
             status='NEW'
         )
 
