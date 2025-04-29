@@ -17,7 +17,7 @@ class Sample(models.Model):
     manufacturer = models.CharField(max_length=255)
     description = models.TextField()
     reference = models.CharField(max_length=255)
-    author = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
+    author = models.ForeignKey(UserModel, on_delete=models.PROTECT)
 
     class Meta:
         ordering = ['name']
