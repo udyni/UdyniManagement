@@ -66,7 +66,7 @@ class ExperimentalStation(models.Model):
     name = models.CharField(max_length=255)
     laboratory = models.ForeignKey(Laboratory, on_delete=models.PROTECT)
     description = models.TextField()
-    responsible = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
+    responsible = models.ForeignKey(UserModel, on_delete=models.PROTECT)
     status = models.CharField(max_length=17, choices=POSSIBLE_STATUSES)
 
     class Meta:
@@ -102,7 +102,7 @@ class Experiment(models.Model):
     def get_samples_for_exp(self):
         return SampleForExperiment.objects.filter(experiment=self.experiment_id)
     samples = property(get_samples_for_exp)
-    responsible = models.ForeignKey(UserModel, on_delete=models.PROTECT, null=True, blank=True)
+    responsible = models.ForeignKey(UserModel, on_delete=models.PROTECT)
     status = models.CharField(max_length=10, choices=POSSIBLE_STATUSES)
 
     class Meta:

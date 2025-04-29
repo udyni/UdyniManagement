@@ -242,7 +242,7 @@ class ExperimentList(PermissionRequiredMixin, ListViewMenu):
 
 class ExperimentCreate(PermissionRequiredMixin, CreateViewMenu):
     model = Experiment
-    fields = ['project', 'reference', 'description', 'responsible','status']
+    fields = ['project', 'reference', 'description', 'status']
     permission_required = 'Experiment.experiment_manage'
     template_name = "UdyniManagement/generic_form.html"
     
@@ -255,6 +255,7 @@ class ExperimentCreate(PermissionRequiredMixin, CreateViewMenu):
         station_id = self.kwargs['station_id']
         experimental_station = get_object_or_404(ExperimentalStation, station_id=station_id)
         form.instance.experimental_station = experimental_station
+        form.instance.responsible = self.request.user
         return super().form_valid(form)
     
     def get_context_data(self, **kwargs):

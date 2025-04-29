@@ -52,7 +52,7 @@ class ExperimentForStationListAPI(View):
                 {
                     'experiment_id': e.experiment_id,
                     'creation_time': e.creation_time,
-                    'project': e.project.name,
+                    'project': e.project.name if e.project is not None else None,
                     'reference': e.reference,
                     'description': e.description,
                     'responsible': e.responsible.email,
