@@ -26,6 +26,7 @@ urlpatterns = [
     path('accounting/', include('Accounting.urls')),
     #path('reporting_old/', include('FinancialReporting.urls')),
     path('reporting/', include('Reporting.urls')),
+    path('lablogbook/', include('LabLogbook.urls')),
     path('sigla/', include('sigla.urls')),
     path('admin/', admin.site.urls),
 ]
@@ -43,6 +44,12 @@ menu = [
             menu_include('Projects.urls'),
             menu_include('Accounting.urls'),
             menu_include('Reporting.urls'),
+        ],
+    },
+    {
+        'name': 'Experimental Data Management',
+        'sections': [
+            menu_include('LabLogbook.urls'),
         ],
     },
     {
