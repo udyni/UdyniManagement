@@ -9,3 +9,4 @@ crispy-bootstrap4>=2024
 reportlab>=3.5,<4
 requests>=2,<3
 xlrd>=2.0.1
+django-mptt>=0.14,<0.15

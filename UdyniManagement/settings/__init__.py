@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'Projects.apps.ProjectsConfig',
     'Accounting.apps.AccountingConfig',
     'Tags.apps.TagsConfig',
+    'LabLogbook.apps.LablogbookConfig',
     'sigla.apps.SiglaConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'crispy_forms',
+    'mptt',
     'crispy_bootstrap4',
 ]
 
